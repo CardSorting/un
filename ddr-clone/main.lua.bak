@@ -1,0 +1,60 @@
+local love = require("love")
+
+-- Create a new window just for generating arrows
+love.window.setMode(50, 50)
+
+-- Colors
+local arrowColor = {1, 1, 1}  -- White
+local outlineColor = {0, 0, 0} -- Black
+
+-- Function to draw arrow
+local function drawArrow(rotation)
+    -- Draw outline
+    love.graphics.setColor(outlineColor)
+    love.graphics.setLineWidth(3)
+    love.graphics.polygon("line", 25, 5, 45, 25, 35, 25, 35, 45, 15, 45, 15, 25, 5, 25)
+    
+    -- Draw fill
+    love.graphics.setColor(arrowColor)
+    love.graphics.polygon("fill", 25, 5, 45, 25, 35, 25, 35, 45, 15, 45, 15, 25, 5, 25)
+end
+
+-- Generate arrows for each direction
+local directions = {
+    {name = "up", rotation = 0},
+    {name = "down", rotation = math.pi},
+    {name = "left", rotation = -math.pi/2},
+    {name = "right", rotation = math.pi/2}
+}
+
+function love.load()
+    love.graphics.setBackgroundColor(0, 0, 0, 0)
+    
+    for _, dir in ipairs(directions) do
+        -- Clear canvas
+        love.graphics.clear()
+        
+        -- Set up transformation
+        love.graphics.push()
+        love.graphics.translate(25, 25)
+        love.graphics.rotate(dir.rotation)
+        love.graphics.translate(-25, -25)
+        
+        -- Draw arrow
+        drawArrow(dir.rotation)
+        
+        -- Reset transformation
+        love.graphics.pop()
+        
+        -- Save to file
+        local imageData = love.graphics.newScreenshot()
+        imageData:encode("png", "assets/arrow_" .. dir.name .. ".png")
+    end
+    
+    -- Exit after generating
+    love.event.quit()
+end
+
+-- Required empty callbacks
+function love.draw() end
+function love.update(dt) end
