@@ -6,6 +6,42 @@ local menuMusic = love.audio.newSource("assets/Z Fighter's Anthem.mp3", "stream"
 menuMusic:setLooping(true)
 menuMusic:play()
 
+-- Preview system
+local previewSystem = {
+    currentPreview = nil,
+    lastSelectedSong = nil,
+    previewStartTime = 0,
+    fadeVolume = 1
+}
+
+local function updatePreview(selectedSong, songs)
+    -- Check if selection changed
+    if selectedSong ~= previewSystem.lastSelectedSong then
+        -- Stop current preview if exists
+        if previewSystem.currentPreview then
+            previewSystem.currentPreview:stop()
+        end
+        
+        -- Load and play new preview
+        if selectedSong and songs[selectedSong] then
+            local song = songs[selectedSong]
+            -- Lower menu music volume
+            menuMusic:setVolume(0.3)
+            
+            -- Create new preview
+            previewSystem.currentPreview = love.audio.newSource(song.path, "stream")
+            previewSystem.currentPreview:setVolume(0.7)
+            previewSystem.currentPreview:play()
+            previewSystem.previewStartTime = love.timer.getTime()
+        else
+            -- Restore menu music volume if no preview
+            menuMusic:setVolume(1)
+        end
+        
+        previewSystem.lastSelectedSong = selectedSong
+    end
+end
+
 -- Animation state
 local menuAnimState = {
     time = 0,
@@ -199,6 +235,14 @@ local function drawMainMenu()
     menuAnimState.flashAlpha = math.max(0, menuAnimState.flashAlpha - dt * 2)
     updateParticles(dt)
     
+    -- Reset preview system when in main menu
+    if previewSystem.currentPreview then
+        previewSystem.currentPreview:stop()
+        previewSystem.currentPreview = nil
+        previewSystem.lastSelectedSong = nil
+        menuMusic:setVolume(1)
+    end
+    
     -- Draw animated background
     drawBackground()
     
@@ -291,6 +335,10 @@ local function drawSongSelect()
     menuAnimState.neonIntensity = 0.7 + 0.3 * math.sin(menuAnimState.time * 5)
     updateParticles(dt)
     
+    -- Update song preview
+    local songs = songManager.getSongs()
+    updatePreview(gameState.state.selectedSong, songs)
+    
     -- Draw animated background
     drawBackground()
     
@@ -315,7 +363,6 @@ local function drawSongSelect()
     love.graphics.pop()
     
     -- Calculate pagination
-    local songs = songManager.getSongs()
     local startIndex = (gameState.state.currentPage - 1) * gameState.state.songsPerPage + 1
     local endIndex = math.min(startIndex + gameState.state.songsPerPage - 1, #songs)
     local totalPages = math.ceil(#songs / gameState.state.songsPerPage)
