@@ -15,6 +15,7 @@ function love.load()
     
     -- Then initialize song manager which depends on storage
     songManager.init()
+    songManager.cleanup() -- Clean up any invalid songs
     
     -- Initialize gameplay elements last
     arrowColors = gameplay.createArrowColors()
@@ -187,6 +188,7 @@ function love.keypressed(key)
                 selectedItem.action()
                 gameState.state.stagesCleared = 0
                 gameState.state.totalScore = 0
+                songManager.cleanup() -- Clean up invalid songs when entering menu
             end
         end
     elseif gameState.state.current == "songSelect" then
@@ -238,6 +240,7 @@ function love.keypressed(key)
             gameState.state.currentMusic:play()
         elseif key == "escape" then
             gameState.state.current = "mainMenu"
+            songManager.cleanup() -- Clean up invalid songs when returning to menu
         end
     elseif gameState.state.current == "game" then
         if key == "left" or key == "down" or key == "up" or key == "right" then
@@ -288,6 +291,7 @@ function love.keypressed(key)
     elseif gameState.state.current == "gameover" and key == "r" then
         if gameState.state.isGameOver then
             gameState.state.current = "mainMenu"
+            songManager.cleanup() -- Clean up invalid songs when returning to menu
         else
             gameState.state.current = "songSelect"
         end

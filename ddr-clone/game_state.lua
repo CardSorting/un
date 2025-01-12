@@ -10,6 +10,16 @@ local fonts = {
     header = love.graphics.newFont(52)  -- New font for section headers
 }
 
+local editorState = {
+    recording = false,
+    currentTime = 0,
+    arrows = {},
+    songName = nil,
+    audioPath = nil,
+    currentMusic = nil,
+    audioData = nil
+}
+
 local gameState = {
     current = "mainMenu",  -- mainMenu, songSelect, game, gameover, editor
     score = 0,
@@ -34,6 +44,7 @@ local gameState = {
     totalScore = 0,
     isGameOver = false,
     currentMusic = nil,
+    editor = editorState,  -- Initialize editor state properly
     
     -- Enhanced animation states
     menuAnimations = {
@@ -67,16 +78,6 @@ local gameState = {
         right = 0
     },
     hitEffects = {}
-}
-
-local editorState = {
-    recording = false,
-    currentTime = 0,
-    arrows = {},
-    songName = nil,
-    audioPath = nil,
-    currentMusic = nil,
-    audioData = nil
 }
 
 local menuItems = {
@@ -123,14 +124,22 @@ local hitSettings = {
 }
 
 local function init()
-    -- Any additional initialization if needed
-    -- Fonts are already initialized at module load
+    -- Reset editor state
+    gameState.editor = {
+        recording = false,
+        currentTime = 0,
+        arrows = {},
+        songName = nil,
+        audioPath = nil,
+        currentMusic = nil,
+        audioData = nil
+    }
 end
 
 -- Create a module table with all components
 local module = {
     state = gameState,
-    editor = editorState,
+    editor = gameState.editor,  -- Use the editor state from gameState
     menuItems = menuItems,
     colors = colors,
     hitSettings = hitSettings,
