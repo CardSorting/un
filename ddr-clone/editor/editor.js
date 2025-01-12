@@ -1,9 +1,14 @@
 class BeatmapEditor {
     constructor() {
-        this.audio = new Audio();
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.audioSource = null;
+        this.audioBuffer = null;
+        this.startTime = 0;
         this.notes = [];
         this.isPlaying = false;
         this.currentTime = 0;
+        this.lastNoteTime = 0;
+        this.minTimeBetweenNotes = 0.1; // Minimum time between notes in seconds
         
         this.setupEventListeners();
         this.updateTimeline();
@@ -25,83 +30,120 @@ class BeatmapEditor {
         document.getElementById('stop').addEventListener('click', () => this.stopPlayback());
         document.getElementById('save').addEventListener('click', () => this.saveBeatmap());
 
-        // Keyboard controls
+        // Keyboard controls with debounce
+        let lastKeyTime = {};
         document.addEventListener('keydown', (e) => {
             if (e.repeat) return;
             
+            // Get current time directly from audio context when playing
+            const now = this.isPlaying ? this.audioContext.currentTime - this.startTime : 0;
+            let direction = null;
+
             switch(e.key) {
                 case 'ArrowLeft':
-                    this.addNote('left');
+                    direction = 'left';
                     break;
                 case 'ArrowDown':
-                    this.addNote('down');
+                    direction = 'down';
                     break;
                 case 'ArrowUp':
-                    this.addNote('up');
+                    direction = 'up';
                     break;
                 case 'ArrowRight':
-                    this.addNote('right');
+                    direction = 'right';
                     break;
                 case ' ':
                     this.togglePlayback();
-                    break;
+                    return;
+            }
+            
+            if (direction) {
+                // Check if enough time has passed since last note of this direction
+                if (!lastKeyTime[direction] || (now - lastKeyTime[direction]) >= this.minTimeBetweenNotes) {
+                    this.addNote(direction, now);
+                    lastKeyTime[direction] = now;
+                }
             }
         });
 
-        // Audio time update
-        this.audio.addEventListener('timeupdate', () => {
-            this.currentTime = this.audio.currentTime;
-            this.updateStatus();
-            this.highlightCurrentNotes();
-            this.scrollToCurrentTime();
-        });
+        // Start animation frame loop
+        this.animate();
     }
 
-    loadAudio(event) {
+    async loadAudio(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        const url = URL.createObjectURL(file);
-        this.audio.src = url;
         this.songName = file.name.replace('.mp3', '');
-        this.setStatus(`Loaded: ${this.songName}`);
+        
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+            this.setStatus(`Loaded: ${this.songName}`);
+        } catch (error) {
+            console.error('Error loading audio:', error);
+            this.setStatus('Error loading audio file');
+        }
+    }
+
+    animate = () => {
+        if (this.isPlaying) {
+            this.currentTime = this.audioContext.currentTime - this.startTime;
+            this.updateStatus();
+            this.highlightCurrentNotes();
+            this.scrollToCurrentTime();
+        }
+        requestAnimationFrame(this.animate);
     }
 
     togglePlayback() {
         if (this.isPlaying) {
-            this.audio.pause();
-            this.setStatus('Paused');
-        } else {
-            this.audio.play();
+            this.stopPlayback();
+        } else if (this.audioBuffer) {
+            this.audioSource = this.audioContext.createBufferSource();
+            this.audioSource.buffer = this.audioBuffer;
+            this.audioSource.connect(this.audioContext.destination);
+            this.audioSource.start();
+            this.startTime = this.audioContext.currentTime;
+            this.isPlaying = true;
             this.setStatus('Playing');
         }
-        this.isPlaying = !this.isPlaying;
     }
 
     stopPlayback() {
-        this.audio.pause();
-        this.audio.currentTime = 0;
+        if (this.audioSource) {
+            this.audioSource.stop();
+        }
         this.isPlaying = false;
+        this.currentTime = 0;
+        this.lastNoteTime = 0;
         this.setStatus('Stopped');
         this.highlightCurrentNotes();
         this.scrollToCurrentTime();
     }
 
-    addNote(direction) {
-        if (!this.audio.duration) {
-            this.setStatus('Please load an audio file first');
+    addNote(direction, time) {
+        if (!this.audioBuffer || !this.isPlaying) {
+            this.setStatus('Please load and play audio first');
+            return;
+        }
+
+        // Check if enough time has passed since the last note (any direction)
+        if (time - this.lastNoteTime < this.minTimeBetweenNotes) {
             return;
         }
 
         const note = {
-            time: this.currentTime,
+            time: Math.round(time * 100) / 100, // Round to 2 decimal places
             direction: direction
         };
 
         this.notes.push(note);
         this.notes.sort((a, b) => a.time - b.time);
+        this.lastNoteTime = time;
+        
         this.updateTimeline();
-        this.setStatus(`Added ${direction} arrow at ${this.formatTime(this.currentTime)}`);
+        this.setStatus(`Added ${direction} arrow at ${this.formatTime(time)}`);
         this.scrollToCurrentTime();
     }
 
@@ -114,11 +156,9 @@ class BeatmapEditor {
             return;
         }
 
-        // Create a list container
         const list = document.createElement('div');
         list.className = 'note-list';
 
-        // Add notes
         this.notes.forEach((note, index) => {
             const noteElement = document.createElement('div');
             noteElement.className = 'note';
@@ -148,7 +188,6 @@ class BeatmapEditor {
         const notes = timeline.querySelectorAll('.note');
         let targetNote = null;
 
-        // Find the first note that's after the current time
         for (const note of notes) {
             const noteTime = parseFloat(note.dataset.time);
             if (noteTime >= this.currentTime) {
@@ -160,8 +199,6 @@ class BeatmapEditor {
         if (targetNote) {
             const timelineRect = timeline.getBoundingClientRect();
             const noteRect = targetNote.getBoundingClientRect();
-            
-            // Calculate scroll position to keep current note in the middle
             const scrollTarget = noteRect.top - timelineRect.top - (timelineRect.height / 2) + timeline.scrollTop;
             
             timeline.scrollTo({
@@ -180,10 +217,9 @@ class BeatmapEditor {
 
         if (!this.isPlaying) return;
 
-        const currentTime = this.currentTime;
         notes.forEach(noteElement => {
             const noteTime = parseFloat(noteElement.dataset.time);
-            if (Math.abs(noteTime - currentTime) < 0.1) {
+            if (Math.abs(noteTime - this.currentTime) < 0.1) {
                 noteElement.classList.add('selected');
                 noteElement.classList.add('current');
             }
