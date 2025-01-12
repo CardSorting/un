@@ -4,129 +4,138 @@ return {
     difficulty = "Medium",
     bpm = 140,
     arrows = {
-        -- Warm-up Phase (0-8 seconds)
-        -- Basic rhythm pattern with style
-        {time = 1, direction = "left"},
-        {time = 1.5, direction = "right"},
-        {time = 2, direction = "left"},
-        {time = 2.25, direction = "right"},
+        -- Opening Sequence (0-8 seconds)
+        -- Quick hold patterns
+        {time = 2, direction = "left", holdLength = 0.75},
+        {time = 3, direction = "right", holdLength = 0.75},
+        {time = 4, direction = "up", holdLength = 0.75},
+        {time = 5, direction = "down", holdLength = 0.75},
         
-        -- Add up/down flow
-        {time = 3, direction = "up"},
-        {time = 3.5, direction = "down"},
-        {time = 4, direction = "up"},
-        {time = 4.25, direction = "down"},
+        -- Build-up Phase (8-16 seconds)
+        -- Hold and tap combinations
+        {time = 8, direction = "left", holdLength = 1.0},
+        {time = 8.5, direction = "right"}, -- Tap during hold
+        {time = 9, direction = "up", holdLength = 1.0},
+        {time = 9.5, direction = "down"}, -- Tap during hold
         
-        -- Dance Flow (8-16 seconds)
-        -- Crossover pattern
-        {time = 8, direction = "left"},
-        {time = 8.5, direction = "up"},
-        {time = 9, direction = "right"},
-        {time = 9.5, direction = "down"},
+        -- Quick alternating holds
+        {time = 11, direction = "left", holdLength = 0.5},
+        {time = 11.5, direction = "right", holdLength = 0.5},
+        {time = 12, direction = "up", holdLength = 0.5},
+        {time = 12.5, direction = "down", holdLength = 0.5},
         
-        -- Quick steps
-        {time = 10, direction = "left"},
-        {time = 10.25, direction = "right"},
-        {time = 10.5, direction = "left"},
-        {time = 10.75, direction = "right"},
+        -- First Intensity (16-24 seconds)
+        -- Simultaneous holds with taps
+        {time = 16, direction = "left", holdLength = 1.5},
+        {time = 16, direction = "right", holdLength = 1.5},
+        {time = 16.75, direction = "up"}, -- Tap during holds
+        {time = 17.25, direction = "down"}, -- Tap during holds
         
-        -- First Technical Section (16-24 seconds)
-        -- Triplet pattern
-        {time = 16, direction = "left"},
-        {time = 16.33, direction = "down"},
-        {time = 16.66, direction = "right"},
-        {time = 17, direction = "up"},
-        {time = 17.33, direction = "down"},
-        {time = 17.66, direction = "left"},
+        -- Quick release chain
+        {time = 19, direction = "left", holdLength = 0.25},
+        {time = 19.25, direction = "down", holdLength = 0.25},
+        {time = 19.5, direction = "up", holdLength = 0.25},
+        {time = 19.75, direction = "right", holdLength = 0.25},
         
-        -- Double steps with rhythm
-        {time = 18, direction = "left"},
-        {time = 18, direction = "down"},
-        {time = 18.5, direction = "right"},
-        {time = 18.5, direction = "up"},
+        -- Complex Pattern (24-32 seconds)
+        -- Hold and crossover
+        {time = 24, direction = "left", holdLength = 2.0},
+        {time = 24.5, direction = "up"}, -- Tap during hold
+        {time = 25, direction = "right"}, -- Tap during hold
+        {time = 25.5, direction = "down"}, -- Tap during hold
         
-        -- Groove Section (24-32 seconds)
-        -- Syncopated pattern
-        {time = 24, direction = "left"},
-        {time = 24.75, direction = "right"},
-        {time = 25, direction = "left"},
-        {time = 25.75, direction = "right"},
+        -- Double holds with taps
+        {time = 27, direction = "left", holdLength = 1.0},
+        {time = 27, direction = "right", holdLength = 1.0},
+        {time = 27.5, direction = "up"},
+        {time = 28, direction = "down"},
         
-        -- Quick alternations
-        {time = 26, direction = "up"},
-        {time = 26.25, direction = "down"},
-        {time = 26.5, direction = "up"},
-        {time = 26.75, direction = "down"},
+        -- Intensity Build (32-40 seconds)
+        -- Rapid hold transitions
+        {time = 32, direction = "left", holdLength = 0.3},
+        {time = 32.3, direction = "down", holdLength = 0.3},
+        {time = 32.6, direction = "up", holdLength = 0.3},
+        {time = 32.9, direction = "right", holdLength = 0.3},
         
-        -- Build-up Section (32-40 seconds)
-        -- Increasing complexity
-        {time = 32, direction = "left"},
-        {time = 32.5, direction = "right"},
-        {time = 33, direction = "up"},
-        {time = 33.25, direction = "down"},
-        {time = 33.5, direction = "left"},
-        {time = 33.75, direction = "right"},
+        -- Hold streams
+        {time = 34, direction = "left", holdLength = 0.5},
+        {time = 34.25, direction = "right"},
+        {time = 34.5, direction = "up", holdLength = 0.5},
+        {time = 34.75, direction = "down"},
         
-        -- Double arrows with flow
-        {time = 34, direction = "left"},
-        {time = 34, direction = "up"},
-        {time = 34.5, direction = "right"},
-        {time = 34.5, direction = "down"},
+        -- Peak Intensity (40-48 seconds)
+        -- Triple hold pattern
+        {time = 40, direction = "left", holdLength = 1.0},
+        {time = 40, direction = "right", holdLength = 1.0},
+        {time = 40, direction = "up", holdLength = 1.0},
+        {time = 40.5, direction = "down"}, -- Tap during holds
         
-        -- Technical Break (40-48 seconds)
-        -- Complex step pattern
-        {time = 40, direction = "left"},
-        {time = 40.25, direction = "up"},
-        {time = 40.5, direction = "right"},
-        {time = 40.75, direction = "down"},
-        {time = 41, direction = "left"},
-        {time = 41.25, direction = "up"},
+        -- Quick release sequence
+        {time = 42, direction = "left", holdLength = 0.2},
+        {time = 42.2, direction = "down", holdLength = 0.2},
+        {time = 42.4, direction = "right", holdLength = 0.2},
+        {time = 42.6, direction = "up", holdLength = 0.2},
         
-        -- Stream sequence
-        {time = 42, direction = "left"},
-        {time = 42.25, direction = "down"},
-        {time = 42.5, direction = "up"},
-        {time = 42.75, direction = "right"},
+        -- Technical Section (48-56 seconds)
+        -- Hold and tap precision
+        {time = 48, direction = "left", holdLength = 1.5},
+        {time = 48.25, direction = "up"}, -- Quick tap
+        {time = 48.5, direction = "down"}, -- Quick tap
+        {time = 48.75, direction = "right"}, -- Quick tap
         
-        -- Dance Climax (48-56 seconds)
-        -- Advanced combinations
-        {time = 48, direction = "left"},
-        {time = 48, direction = "right"},
-        {time = 48.5, direction = "up"},
-        {time = 48.75, direction = "down"},
+        -- Alternating holds with taps
+        {time = 50, direction = "left", holdLength = 0.75},
+        {time = 50.25, direction = "right"}, -- Tap during hold
+        {time = 50.75, direction = "up", holdLength = 0.75},
+        {time = 51, direction = "down"}, -- Tap during hold
         
-        -- Quick crossovers
-        {time = 49, direction = "left"},
-        {time = 49.25, direction = "up"},
-        {time = 49.5, direction = "right"},
-        {time = 49.75, direction = "down"},
+        -- Climax Section (56-64 seconds)
+        -- Complex hold combinations
+        {time = 56, direction = "left", holdLength = 1.0},
+        {time = 56, direction = "right", holdLength = 1.0},
+        {time = 56.5, direction = "up", holdLength = 0.5},
+        {time = 57, direction = "down", holdLength = 0.5},
         
-        -- Peak Intensity (56-64 seconds)
-        -- Complex doubles
-        {time = 56, direction = "left"},
-        {time = 56, direction = "up"},
-        {time = 56.5, direction = "right"},
-        {time = 56.5, direction = "down"},
+        -- Rapid transitions
+        {time = 58, direction = "left", holdLength = 0.25},
+        {time = 58.25, direction = "up", holdLength = 0.25},
+        {time = 58.5, direction = "right", holdLength = 0.25},
+        {time = 58.75, direction = "down", holdLength = 0.25},
         
-        -- Rapid alternations
-        {time = 57, direction = "left"},
-        {time = 57.25, direction = "right"},
-        {time = 57.5, direction = "left"},
-        {time = 57.75, direction = "right"},
+        -- Final Challenge (64-72 seconds)
+        -- Hold endurance test
+        {time = 64, direction = "left", holdLength = 2.0},
+        {time = 64.5, direction = "right"}, -- Tap during hold
+        {time = 65, direction = "up"}, -- Tap during hold
+        {time = 65.5, direction = "down"}, -- Tap during hold
         
-        -- Cool Down Phase (64-72 seconds)
-        -- Rhythmic wind-down
-        {time = 64, direction = "left"},
-        {time = 64.5, direction = "right"},
-        {time = 65, direction = "up"},
-        {time = 65.5, direction = "down"},
+        -- Quick release chain
+        {time = 67, direction = "left", holdLength = 0.2},
+        {time = 67.2, direction = "right", holdLength = 0.2},
+        {time = 67.4, direction = "up", holdLength = 0.2},
+        {time = 67.6, direction = "down", holdLength = 0.2},
         
-        -- Final flourish
-        {time = 66, direction = "left"},
-        {time = 66, direction = "right"},
-        {time = 66.5, direction = "up"},
-        {time = 66.5, direction = "down"},
-        {time = 67, direction = "left"},
-        {time = 67.5, direction = "right"},
+        -- Grand Finale (72-80 seconds)
+        -- Quad hold pattern
+        {time = 72, direction = "left", holdLength = 1.0},
+        {time = 72, direction = "right", holdLength = 1.0},
+        {time = 72, direction = "up", holdLength = 1.0},
+        {time = 72, direction = "down", holdLength = 1.0},
+        
+        -- Final burst
+        {time = 74, direction = "left", holdLength = 0.5},
+        {time = 74.5, direction = "right", holdLength = 0.5},
+        {time = 75, direction = "up", holdLength = 0.5},
+        {time = 75.5, direction = "down", holdLength = 0.5},
+        
+        -- Epic ending
+        {time = 76, direction = "left", holdLength = 0.25},
+        {time = 76.25, direction = "down", holdLength = 0.25},
+        {time = 76.5, direction = "up", holdLength = 0.25},
+        {time = 76.75, direction = "right", holdLength = 0.25},
+        {time = 77, direction = "left"},
+        {time = 77, direction = "right"},
+        {time = 77, direction = "up"},
+        {time = 77, direction = "down"} -- Final quad tap
     }
 }

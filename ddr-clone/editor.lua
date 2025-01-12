@@ -2,6 +2,14 @@ local storage = require('storage')
 local gameState = require('game_state')
 local songManager = require('song_manager')
 
+-- Hold state tracking
+local holdState = {
+    left = { active = false, startTime = 0 },
+    down = { active = false, startTime = 0 },
+    up = { active = false, startTime = 0 },
+    right = { active = false, startTime = 0 }
+}
+
 local function drawEditor()
     -- Draw background panel
     love.graphics.setColor(0, 0, 0, 0.7)
@@ -30,19 +38,39 @@ local function drawEditor()
         end
         love.graphics.printf("Press Escape to return to menu", 0, 300, love.graphics.getWidth(), "center")
     else
-        -- Show recording interface
+        -- Show recording interface with hold instructions
         love.graphics.printf("Recording...", 0, 150, love.graphics.getWidth(), "center")
         love.graphics.printf(string.format("Time: %.2f", gameState.editor.currentTime), 0, 200, love.graphics.getWidth(), "center")
-        love.graphics.printf("Press arrow keys to place arrows", 0, 250, love.graphics.getWidth(), "center")
-        love.graphics.printf("Press Space to finish", 0, 300, love.graphics.getWidth(), "center")
-        love.graphics.printf("Press Escape to cancel", 0, 330, love.graphics.getWidth(), "center")
+        love.graphics.printf("Press arrow keys to place arrows", 0, 230, love.graphics.getWidth(), "center")
+        love.graphics.printf("Hold arrow keys for hold notes", 0, 260, love.graphics.getWidth(), "center")
+        love.graphics.printf("Press Space to finish", 0, 290, love.graphics.getWidth(), "center")
+        love.graphics.printf("Press Escape to cancel", 0, 320, love.graphics.getWidth(), "center")
         
-        -- Draw placed arrows (show last 10 for visibility)
-        local startIdx = math.max(1, #gameState.editor.arrows - 9)
+        -- Draw active holds status
+        love.graphics.setFont(gameState.fonts.small)
+        local holdY = 350
+        for direction, state in pairs(holdState) do
+            if state.active then
+                local holdDuration = gameState.editor.currentTime - state.startTime
+                love.graphics.setColor(1, 1, 0, 1) -- Highlight active holds
+                love.graphics.printf(string.format("Holding %s: %.2fs", direction, holdDuration), 
+                    0, holdY, love.graphics.getWidth(), "center")
+                holdY = holdY + 25
+            end
+        end
+        
+        -- Draw placed arrows (show last 8 for visibility)
+        love.graphics.setColor(gameState.colors.ui)
+        local startIdx = math.max(1, #gameState.editor.arrows - 7)
         for i = startIdx, #gameState.editor.arrows do
             local arrow = gameState.editor.arrows[i]
-            local y = 350 + (i - startIdx) * 30
-            love.graphics.printf(arrow.direction .. " at " .. string.format("%.2f", arrow.time), 0, y, love.graphics.getWidth(), "center")
+            local y = holdY + (i - startIdx) * 30
+            local text = arrow.direction
+            if arrow.holdLength then
+                text = text .. string.format(" hold for %.2fs", arrow.holdLength)
+            end
+            text = text .. string.format(" at %.2fs", arrow.time)
+            love.graphics.printf(text, 0, y, love.graphics.getWidth(), "center")
         end
     end
 end
@@ -56,12 +84,30 @@ local function startRecording()
     gameState.editor.currentTime = 0
     gameState.editor.arrows = {}
     gameState.editor.currentMusic:play()
+    
+    -- Reset hold states
+    for direction, _ in pairs(holdState) do
+        holdState[direction] = { active = false, startTime = 0 }
+    end
 end
 
 local function stopRecording()
     gameState.editor.recording = false
     if gameState.editor.currentMusic then
         gameState.editor.currentMusic:stop()
+    end
+    
+    -- Finish any active holds
+    for direction, state in pairs(holdState) do
+        if state.active then
+            local holdLength = gameState.editor.currentTime - state.startTime
+            table.insert(gameState.editor.arrows, {
+                time = state.startTime,
+                direction = direction,
+                holdLength = holdLength
+            })
+            holdState[direction] = { active = false, startTime = 0 }
+        end
     end
     
     if #gameState.editor.arrows == 0 then
@@ -137,10 +183,10 @@ local function handleEditorKeyPress(key)
         if key == "space" then
             stopRecording()
         elseif key == "left" or key == "down" or key == "up" or key == "right" then
-            table.insert(gameState.editor.arrows, {
-                time = gameState.editor.currentTime,
-                direction = key
-            })
+            -- Start hold tracking
+            if not holdState[key].active then
+                holdState[key] = { active = true, startTime = gameState.editor.currentTime }
+            end
         elseif key == "escape" then
             -- Cancel recording
             gameState.editor.recording = false
@@ -148,6 +194,35 @@ local function handleEditorKeyPress(key)
                 gameState.editor.currentMusic:stop()
             end
             gameState.editor.arrows = {}
+            -- Reset hold states
+            for direction, _ in pairs(holdState) do
+                holdState[direction] = { active = false, startTime = 0 }
+            end
+        end
+    end
+end
+
+local function handleEditorKeyRelease(key)
+    if gameState.editor.recording then
+        if key == "left" or key == "down" or key == "up" or key == "right" then
+            if holdState[key].active then
+                local holdLength = gameState.editor.currentTime - holdState[key].startTime
+                if holdLength >= 0.1 then -- Minimum hold duration of 0.1 seconds
+                    -- Add hold note
+                    table.insert(gameState.editor.arrows, {
+                        time = holdState[key].startTime,
+                        direction = key,
+                        holdLength = holdLength
+                    })
+                else
+                    -- Add regular tap note
+                    table.insert(gameState.editor.arrows, {
+                        time = holdState[key].startTime,
+                        direction = key
+                    })
+                end
+                holdState[key] = { active = false, startTime = 0 }
+            end
         end
     end
 end
@@ -155,5 +230,6 @@ end
 return {
     drawEditor = drawEditor,
     updateEditor = updateEditor,
-    handleEditorKeyPress = handleEditorKeyPress
+    handleEditorKeyPress = handleEditorKeyPress,
+    handleEditorKeyRelease = handleEditorKeyRelease
 }
