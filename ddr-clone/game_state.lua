@@ -1,11 +1,13 @@
 -- Initialize fonts immediately when the module loads
 local fonts = {
-    title = love.graphics.newFont(48),
-    large = love.graphics.newFont(32),
-    medium = love.graphics.newFont(24),
+    title = love.graphics.newFont(64),  -- Increased for more impact
+    large = love.graphics.newFont(36),  -- Increased for better visibility
+    medium = love.graphics.newFont(28), -- Adjusted for balance
     small = love.graphics.newFont(20),
-    combo = love.graphics.newFont(36),
-    multiplier = love.graphics.newFont(28)
+    combo = love.graphics.newFont(48),  -- Increased for dramatic effect
+    multiplier = love.graphics.newFont(32),
+    neon = love.graphics.newFont(42),   -- New font for neon effects
+    header = love.graphics.newFont(52)  -- New font for section headers
 }
 
 local gameState = {
@@ -32,6 +34,32 @@ local gameState = {
     totalScore = 0,
     isGameOver = false,
     currentMusic = nil,
+    
+    -- Enhanced animation states
+    menuAnimations = {
+        titleGlow = 0,
+        selectedScale = 1,
+        colorCycle = 0,
+        beatPulse = 0,
+        particleTimer = 0,
+        shockwaveTimer = 0,
+        flashIntensity = 0,
+        energyWaveOffset = 0,
+        neonIntensity = 0
+    },
+    
+    -- Enhanced visual effects states
+    visualEffects = {
+        glowIntensity = 1,
+        pulseScale = 1,
+        beatSync = 0,
+        particleCount = 0,
+        shockwaves = {},
+        energyWaves = {},
+        activeParticles = {},
+        colorPhase = 0
+    },
+    
     laneEffects = {
         left = 0,
         down = 0,
@@ -59,19 +87,34 @@ local menuItems = {
 }
 
 local colors = {
-    background = {0.1, 0.1, 0.1},
-    ui = {0.9, 0.9, 0.9},
-    uiDark = {0.7, 0.7, 0.7},
-    health = {0.2, 0.8, 0.2},
-    healthLow = {0.8, 0.2, 0.2},
-    combo = {1, 0.8, 0.2},
-    perfect = {0.3, 1, 0.3},
-    good = {0.3, 0.3, 1},
-    miss = {1, 0.3, 0.3},
-    progress = {0.4, 0.4, 0.4},
-    progressFill = {0.6, 0.6, 0.6},
-    multiplier = {1, 0.5, 0.8},
-    laneEffect = {1, 1, 1, 0.2}
+    background = {0.1, 0.1, 0.15, 1},  -- Added alpha
+    ui = {0.9, 0.95, 1, 1},           -- Added alpha
+    uiDark = {0.5, 0.6, 0.7, 1},      -- Added alpha
+    health = {0.2, 1, 0.4, 1},        -- Added alpha
+    healthLow = {1, 0.2, 0.3, 1},     -- Added alpha
+    combo = {1, 0.8, 0.2, 1},         -- Added alpha
+    perfect = {0.3, 1, 0.5, 1},       -- Added alpha
+    good = {0.4, 0.6, 1, 1},          -- Added alpha
+    miss = {1, 0.3, 0.4, 1},          -- Added alpha
+    progress = {0.3, 0.5, 0.9, 1},    -- Added alpha
+    progressFill = {0.5, 0.8, 1, 1},  -- Added alpha
+    multiplier = {1, 0.5, 0.8, 1},    -- Added alpha
+    laneEffect = {1, 1, 1, 0.25},     -- Already had alpha
+    
+    -- New color schemes for enhanced effects
+    neon = {
+        blue = {0.4, 0.8, 1, 1},      -- Added alpha
+        pink = {1, 0.4, 0.8, 1},      -- Added alpha
+        green = {0.4, 1, 0.8, 1},     -- Added alpha
+        yellow = {1, 0.9, 0.4, 1},    -- Added alpha
+        purple = {0.8, 0.4, 1, 1}     -- Added alpha
+    },
+    
+    particles = {
+        energy = {0.6, 0.9, 1, 1},    -- Added alpha
+        spark = {1, 0.95, 0.8, 1},    -- Added alpha
+        trail = {0.4, 0.8, 1, 1}      -- Added alpha
+    }
 }
 
 local hitSettings = {
