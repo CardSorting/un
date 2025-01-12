@@ -1,11 +1,11 @@
 return {
     -- Game area configuration
     gameArea = {
-        width = 480,          -- Total width of gameplay area
-        laneWidth = 100,      -- Width of each arrow lane
-        arrowSize = 50,       -- Size of arrow sprites
-        targetY = 150,        -- Target line height
-        spawnY = 700         -- Arrow spawn position
+        width = 800,          -- Total width of gameplay area
+        laneWidth = 200,      -- Increased from 160 for better spacing between lanes
+        arrowSize = 80,       -- Size of arrow sprites
+        targetY = 200,        -- Target line height
+        spawnY = 900         -- Arrow spawn position
     },
     
     -- Colors for gameplay elements

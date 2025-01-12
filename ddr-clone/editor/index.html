@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Beatmap Editor</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+            font-family: monospace;
+        }
+        #container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        #controls {
+            margin: 20px 0;
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            background: #4CAF50;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #timeline {
+            margin: 20px 0;
+            background: #262626;
+            border-radius: 5px;
+            height: 500px;
+            overflow-y: auto;
+            border: 1px solid #444;
+        }
+        .note-list {
+            padding: 10px;
+        }
+        .note {
+            padding: 10px;
+            margin: 4px 0;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            height: 20px;
+            line-height: 20px;
+        }
+        .note:hover {
+            background: #404040;
+        }
+        .note.selected {
+            background: #4a4a4a;
+            transform: scale(1.01);
+        }
+        .note.current {
+            border-left: 4px solid #4CAF50;
+            padding-left: 6px;
+        }
+        .note-time {
+            color: #4CAF50;
+            min-width: 120px;
+            font-family: monospace;
+        }
+        .note-direction {
+            color: #ff9800;
+            flex-grow: 1;
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .note-delete {
+            color: #f44336;
+            cursor: pointer;
+            padding: 0 10px;
+            font-size: 1.2em;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .note-delete:hover {
+            opacity: 1;
+        }
+        .empty-message {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+        #status {
+            margin-top: 10px;
+            color: #4CAF50;
+            height: 20px;
+            font-family: monospace;
+        }
+        .help {
+            margin: 20px 0;
+            padding: 15px;
+            background: #333;
+            border-radius: 5px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .key {
+            background: #444;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin: 0 2px;
+            font-family: monospace;
+        }
+        .section {
+            margin: 10px 0;
+        }
+        .section-title {
+            color: #4CAF50;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a4a4a;
+            border-radius: 6px;
+            border: 2px solid #1a1a1a;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>Simple Beatmap Editor</h1>
+        
+        <div class="help">
+            <div class="section">
+                <div class="section-title">Controls</div>
+                <p><span class="key">Space</span> Play/Pause music</p>
+                <p><span class="key">←</span> <span class="key">↓</span> <span class="key">↑</span> <span class="key">→</span> Add notes</p>
+                <p>Click × to delete notes</p>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Creating Beatmaps</div>
+                <p>1. Load an MP3 file</p>
+                <p>2. Press Space to play music</p>
+                <p>3. Press arrow keys to add notes</p>
+                <p>4. Notes are automatically sorted by time</p>
+                <p>5. Save when finished</p>
+            </div>
+        </div>
+
+        <div id="controls">
+            <input type="file" id="audioFile" accept=".mp3" />
+            <button id="playPause">Play/Pause</button>
+            <button id="stop">Stop</button>
+            <button id="save">Save Beatmap</button>
+            <div id="status"></div>
+        </div>
+
+        <div id="timeline">
+            <!-- Notes will be added here -->
+        </div>
+    </div>
+
+    <script src="editor.js"></script>
+</body>
+</html>

@@ -8,7 +8,8 @@ function songManager.init()
     local builtInSongs = {
         require("songs/song1/pattern"),
         require("songs/song2/pattern"),
-        require("songs/song3/pattern")
+        require("songs/song3/pattern"),
+        require("songs/song4/pattern")  -- Added song4
     }
     
     -- Load and validate built-in songs

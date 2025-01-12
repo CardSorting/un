@@ -1,12 +1,12 @@
 return {
     -- Main panel layout
     panel = {
-        width = 900,              -- Wider panel for better spacing
-        height = 650,             -- Taller panel for content
-        cornerRadius = 20,
+        width = 1200,              -- Increased from 900 for better use of screen space
+        height = 800,              -- Increased from 650 for better vertical spacing
+        cornerRadius = 25,         -- Slightly larger corners
         padding = {
-            horizontal = 60,      -- Padding from panel edges
-            vertical = 40
+            horizontal = 80,       -- Increased from 60
+            vertical = 50          -- Increased from 40
         }
     },
     
@@ -14,44 +14,44 @@ return {
     sections = {
         -- Title section at top
         title = {
-            height = 120,
-            spacing = 20
+            height = 150,          -- Increased from 120
+            spacing = 30           -- Increased from 20
         },
         
         -- Grade and score section
         grade = {
-            height = 160,
-            gradeSize = 80,       -- Size of grade letter
-            scoreSpacing = 30     -- Space between grade and score
+            height = 200,          -- Increased from 160
+            gradeSize = 120,       -- Increased from 80
+            scoreSpacing = 40      -- Increased from 30
         },
         
         -- Stats section
         stats = {
-            width = 700,          -- Width of stats container
-            height = 250,         -- Height of stats container
-            padding = 30,         -- Internal padding
-            spacing = 25,         -- Space between stats
-            barHeight = 35,       -- Height of stat bars
-            labelWidth = 100,     -- Width for labels
-            valueWidth = 80       -- Width for values
+            width = 900,           -- Increased from 700
+            height = 300,          -- Increased from 250
+            padding = 40,          -- Increased from 30
+            spacing = 35,          -- Increased from 25
+            barHeight = 45,        -- Increased from 35
+            labelWidth = 150,      -- Increased from 100
+            valueWidth = 100       -- Increased from 80
         },
         
         -- Bottom section
         bottom = {
-            height = 80,
-            spacing = 20
+            height = 100,          -- Increased from 80
+            spacing = 30           -- Increased from 20
         }
     },
     
     -- Visual effects
     effects = {
         glow = {
-            size = 30,
+            size = 40,            -- Increased from 30
             intensity = 0.15
         },
         bars = {
-            cornerRadius = 8,
-            glowSize = 3,
+            cornerRadius = 10,     -- Increased from 8
+            glowSize = 4,         -- Increased from 3
             glowIntensity = 0.3
         }
     },
@@ -122,16 +122,16 @@ return {
     particles = {
         spawnRate = 0.1,
         count = {
-            min = 20,
-            max = 30
+            min = 30,             -- Increased from 20
+            max = 40              -- Increased from 30
         },
         speed = {
-            min = 60,
-            max = 120
+            min = 80,             -- Increased from 60
+            max = 160             -- Increased from 120
         },
         size = {
-            min = 2,
-            max = 5
+            min = 3,              -- Increased from 2
+            max = 7               -- Increased from 5
         },
         fadeSpeed = 0.8
     }

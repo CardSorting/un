@@ -28,13 +28,13 @@ function menuUI.drawMainMenu()
     renderer.drawBackground()
     renderer.drawFlashEffect()
     
-    -- Draw main panel
-    renderer.drawPanel(w/2 - 260, 40, 520, 420, 15)
+    -- Draw main panel (increased size for 1920x1080)
+    renderer.drawPanel(w/2 - 400, 100, 800, 600, 20)
     
-    -- Draw title
+    -- Draw title (adjusted position and scale)
     love.graphics.setFont(gameState.fonts.header)
-    local titleY = 90
-    local titleScale = animations.getPulseScale(1, 0.08, 8)
+    local titleY = 180
+    local titleScale = animations.getPulseScale(1.2, 0.08, 8)  -- Increased base scale
     
     love.graphics.push()
     love.graphics.translate(w/2, titleY + 20)
@@ -45,22 +45,22 @@ function menuUI.drawMainMenu()
     -- Generate title particles
     if love.math.random() < 0.1 then
         particles.spawn(
-            w/2 + love.math.random(-200, 200),
+            w/2 + love.math.random(-300, 300),  -- Increased spread
             titleY + love.math.random(-20, 20),
             "rainbow"
         )
     end
     
-    -- Draw menu items
+    -- Draw menu items (adjusted spacing and position)
     love.graphics.setFont(gameState.fonts.neon)
     for i, item in ipairs(gameState.menuItems) do
-        local baseY = 250 + (i-1) * 50
+        local baseY = 380 + (i-1) * 70  -- Increased spacing between items
         animations.state.menuItemOffsets[i] = animations.state.menuItemOffsets[i] or 0
         local y = baseY + animations.state.menuItemOffsets[i]
         
         if i == gameState.state.selectedMenuItem then
             -- Draw selected item with effects
-            local scale = animations.getPulseScale(1.2, 0.15, 10)
+            local scale = animations.getPulseScale(1.3, 0.15, 10)  -- Increased base scale
             love.graphics.push()
             love.graphics.translate(w/2, y + 15)
             love.graphics.scale(scale, scale)
@@ -70,7 +70,7 @@ function menuUI.drawMainMenu()
             -- Generate particles
             if love.math.random() < 0.3 then
                 particles.spawn(
-                    w/2 + love.math.random(-200, 200),
+                    w/2 + love.math.random(-300, 300),  -- Increased spread
                     y + love.math.random(-10, 10),
                     love.math.random() < 0.6 and "rainbow" or "energy"
                 )
@@ -92,11 +92,11 @@ function menuUI.drawMainMenu()
     -- Draw particles
     particles.draw()
     
-    -- Draw instructions
+    -- Draw instructions (adjusted position)
     love.graphics.setFont(gameState.fonts.small)
     renderer.drawNeonText(
         "Use arrow keys to select, Enter to confirm",
-        0, 500, w, "center",
+        0, h - 100, w, "center",
         0.8,
         animations.getRainbowColor(math.pi)
     )
@@ -117,14 +117,14 @@ function menuUI.drawSongSelect()
     -- Draw background and effects
     renderer.drawBackground()
     
-    -- Draw main panel
-    renderer.drawPanel(w/2 - 310, 20, 620, 520, 15)
+    -- Draw main panel (increased size for 1920x1080)
+    renderer.drawPanel(w/2 - 500, 50, 1000, 800, 20)
     
     -- Draw title
     love.graphics.setFont(gameState.fonts.header)
-    local titleScale = animations.getPulseScale(1, 0.08, 8)
+    local titleScale = animations.getPulseScale(1.2, 0.08, 8)  -- Increased base scale
     love.graphics.push()
-    love.graphics.translate(w/2, 60)
+    love.graphics.translate(w/2, 120)
     love.graphics.scale(titleScale, titleScale)
     renderer.drawNeonText("Song Selection", -w/2, -20, w, "center", 1.5, animations.getRainbowColor())
     love.graphics.pop()
@@ -134,17 +134,17 @@ function menuUI.drawSongSelect()
     local endIndex = math.min(startIndex + gameState.state.songsPerPage - 1, #songs)
     local totalPages = math.ceil(#songs / gameState.state.songsPerPage)
     
-    -- Draw song list
+    -- Draw song list (adjusted sizes and spacing)
     love.graphics.setFont(gameState.fonts.neon)
     for i = startIndex, endIndex do
         local song = songs[i]
         local displayIndex = i - startIndex + 1
-        local baseY = 140 + (displayIndex-1) * 100
+        local baseY = 220 + (displayIndex-1) * 120  -- Increased spacing
         local y = baseY + math.sin(animations.state.time * 2 + displayIndex) * 6
         
         renderer.drawSongPanel(
             song,
-            w/2 - 200, y - 10, 400, 80,
+            w/2 - 400, y - 10, 800, 100,  -- Increased panel size
             i == gameState.state.selectedSong,
             animations.state.time
         )
@@ -152,8 +152,8 @@ function menuUI.drawSongSelect()
         -- Generate particles for selected song
         if i == gameState.state.selectedSong and love.math.random() < 0.3 then
             particles.spawn(
-                w/2 + love.math.random(-150, 150),
-                y + love.math.random(0, 80),
+                w/2 + love.math.random(-300, 300),  -- Increased spread
+                y + love.math.random(0, 100),
                 love.math.random() < 0.6 and "rainbow" or "energy"
             )
         end
@@ -162,21 +162,21 @@ function menuUI.drawSongSelect()
     -- Draw particles
     particles.draw()
     
-    -- Draw pagination
+    -- Draw pagination (adjusted positions)
     love.graphics.setFont(gameState.fonts.small)
     
     -- Previous page button
     if gameState.state.currentPage > 1 then
-        renderer.drawNeonText("< Prev", w/2 - 200, 450, 100, "left", 1, animations.getRainbowColor())
+        renderer.drawNeonText("< Prev", w/2 - 400, h - 150, 200, "left", 1, animations.getRainbowColor())
     else
         love.graphics.setColor(gameState.colors.uiDark)
-        love.graphics.printf("< Prev", w/2 - 200, 450, 100, "left")
+        love.graphics.printf("< Prev", w/2 - 400, h - 150, 200, "left")
     end
     
     -- Page indicator
     local pageScale = animations.getPulseScale(1, 0.08, 4)
     love.graphics.push()
-    love.graphics.translate(w/2, 465)
+    love.graphics.translate(w/2, h - 135)
     love.graphics.scale(pageScale, pageScale)
     renderer.drawNeonText(
         string.format("Page %d/%d", gameState.state.currentPage, totalPages),
@@ -186,22 +186,22 @@ function menuUI.drawSongSelect()
     
     -- Next page button
     if gameState.state.currentPage < totalPages then
-        renderer.drawNeonText("Next >", w/2 + 100, 450, 100, "right", 1, animations.getRainbowColor())
+        renderer.drawNeonText("Next >", w/2 + 200, h - 150, 200, "right", 1, animations.getRainbowColor())
     else
         love.graphics.setColor(gameState.colors.uiDark)
-        love.graphics.printf("Next >", w/2 + 100, 450, 100, "right")
+        love.graphics.printf("Next >", w/2 + 200, h - 150, 200, "right")
     end
     
-    -- Draw instructions
+    -- Draw instructions (adjusted positions)
     renderer.drawNeonText(
         "Press Enter to select, Escape to return",
-        0, 500, w, "center",
+        0, h - 100, w, "center",
         0.8,
         animations.getRainbowColor(math.pi)
     )
     renderer.drawNeonText(
         "Left/Right to change pages",
-        0, 520, w, "center",
+        0, h - 70, w, "center",
         0.8,
         animations.getRainbowColor(math.pi)
     )

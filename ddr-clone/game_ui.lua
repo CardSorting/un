@@ -19,10 +19,10 @@ local function pulseEffect(time, min, max, speed)
 end
 
 local function drawProgressBar(currentTime, totalTime, colors)
-    local width = 400
-    local height = 10  -- Further reduced height
+    local width = 800  -- Increased from 400 for 1920x1080
+    local height = 15  -- Slightly increased from 10
     local x = love.graphics.getWidth()/2 - width/2
-    local y = 50
+    local y = 80  -- Moved down slightly
     
     -- Glow effect with minimal intensity
     local progress = math.min(currentTime / totalTime, 1)
@@ -62,7 +62,7 @@ local function drawSongInfo(songName, colors, fonts)
     local text = songName
     local textWidth = fonts.medium:getWidth(text)
     local x = love.graphics.getWidth()/2
-    local y = 20
+    local y = 30  -- Adjusted for 1080p
     
     -- Draw minimal glow
     local glowFunc = createGlowEffect(colors.ui[1], colors.ui[2], colors.ui[3], 0.2)
@@ -78,8 +78,8 @@ end
 
 local function drawScorePanel(score, multiplier, colors, fonts)
     local time = love.timer.getTime()
-    local x = 50
-    local y = 100
+    local x = 100  -- Increased from 50 for better spacing
+    local y = 150  -- Increased from 100 for better visibility
     
     -- Draw score with minimal glow
     love.graphics.setFont(fonts.large)
@@ -107,13 +107,13 @@ local function drawScorePanel(score, multiplier, colors, fonts)
 end
 
 local function drawStatsPanel(state, colors, fonts)
-    local x = love.graphics.getWidth() - 250
-    local y = 100
+    local x = love.graphics.getWidth() - 350  -- Increased from 250 for better spacing
+    local y = 150  -- Increased from 100 for better visibility
     local time = love.timer.getTime()
     
     -- Draw panel background with minimal gradient
     love.graphics.setColor(0, 0, 0, 0.8)
-    love.graphics.rectangle("fill", x - 10, y - 10, 220, 120, 6, 6)
+    love.graphics.rectangle("fill", x - 10, y - 10, 300, 140, 8, 8)  -- Increased size and rounded corners
     
     -- Draw stats with minimal pulsing
     love.graphics.setFont(fonts.small)
@@ -127,20 +127,20 @@ local function drawStatsPanel(state, colors, fonts)
     for i, stat in ipairs(stats) do
         local alpha = pulseEffect(time + i * 0.2, 0.9, 1, 3) -- Higher min alpha
         love.graphics.setColor(stat.color[1], stat.color[2], stat.color[3], alpha)
-        love.graphics.printf(stat.text, x, y + (i-1) * 25, 200, "left")
+        love.graphics.printf(stat.text, x, y + (i-1) * 30, 280, "left")  -- Increased spacing between stats
     end
 end
 
 local function drawHealthBar(health, colors)
-    local width = 200
-    local height = 18
-    local x = love.graphics.getWidth() - width - 50
-    local y = 50
+    local width = 400  -- Increased from 200 for better visibility
+    local height = 25  -- Increased from 18 for better visibility
+    local x = love.graphics.getWidth() - width - 100  -- Adjusted position
+    local y = 80  -- Adjusted to align with progress bar
     local time = love.timer.getTime()
     
     -- Draw background with minimal gradient
     love.graphics.setColor(0, 0, 0, 0.7)
-    love.graphics.rectangle("fill", x, y, width, height, 3, 3)
+    love.graphics.rectangle("fill", x, y, width, height, 4, 4)  -- Slightly larger rounded corners
     
     -- Calculate health color with smoother transition
     local healthColor = {
@@ -156,7 +156,7 @@ local function drawHealthBar(health, colors)
     glowFunc(x, y, width * (health/100), height, 2)
     
     love.graphics.setColor(healthColor)
-    love.graphics.rectangle("fill", x, y, width * (health/100), height, 3, 3)
+    love.graphics.rectangle("fill", x, y, width * (health/100), height, 4, 4)
     
     -- Draw health segments with minimal opacity
     for i = 1, 9 do
@@ -179,7 +179,7 @@ local function drawCombo(combo, scale, colors, fonts)
     local text = combo .. " COMBO"
     local textWidth = fonts.combo:getWidth(text)
     local x = love.graphics.getWidth()/2
-    local y = love.graphics.getHeight() - 150
+    local y = love.graphics.getHeight() - 200  -- Adjusted for 1080p
     
     -- Draw minimal glow
     local glowFunc = createGlowEffect(colors.combo[1], colors.combo[2], colors.combo[3], 0.3)
@@ -210,7 +210,7 @@ local function drawHitRating(rating, colors, fonts)
     
     local textWidth = fonts.large:getWidth(rating)
     local x = love.graphics.getWidth()/2
-    local y = love.graphics.getHeight() - 200
+    local y = love.graphics.getHeight() - 300  -- Adjusted for 1080p
     
     -- Draw minimal glow
     local glowFunc = createGlowEffect(color[1], color[2], color[3], 0.25)

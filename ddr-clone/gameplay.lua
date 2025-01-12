@@ -35,19 +35,19 @@ end
 
 local function createTargetArrows()
     return {
-        {x = love.graphics.getWidth()/2 - 150, y = ui.gameArea.targetY, direction = "left", glow = 0, rotation = 0, scale = 1, isHolding = false},
-        {x = love.graphics.getWidth()/2 - 50, y = ui.gameArea.targetY, direction = "down", glow = 0, rotation = 0, scale = 1, isHolding = false},
-        {x = love.graphics.getWidth()/2 + 50, y = ui.gameArea.targetY, direction = "up", glow = 0, rotation = 0, scale = 1, isHolding = false},
-        {x = love.graphics.getWidth()/2 + 150, y = ui.gameArea.targetY, direction = "right", glow = 0, rotation = 0, scale = 1, isHolding = false}
+        {x = love.graphics.getWidth()/2 - 300, y = ui.gameArea.targetY, direction = "left", glow = 0, rotation = 0, scale = 1, isHolding = false},
+        {x = love.graphics.getWidth()/2 - 100, y = ui.gameArea.targetY, direction = "down", glow = 0, rotation = 0, scale = 1, isHolding = false},
+        {x = love.graphics.getWidth()/2 + 100, y = ui.gameArea.targetY, direction = "up", glow = 0, rotation = 0, scale = 1, isHolding = false},
+        {x = love.graphics.getWidth()/2 + 300, y = ui.gameArea.targetY, direction = "right", glow = 0, rotation = 0, scale = 1, isHolding = false}
     }
 end
 
 local function getArrowXPosition(direction)
     local positions = {
-        left = love.graphics.getWidth()/2 - 150,
-        down = love.graphics.getWidth()/2 - 50,
-        up = love.graphics.getWidth()/2 + 50,
-        right = love.graphics.getWidth()/2 + 150
+        left = love.graphics.getWidth()/2 - 300,
+        down = love.graphics.getWidth()/2 - 100,
+        up = love.graphics.getWidth()/2 + 100,
+        right = love.graphics.getWidth()/2 + 300
     }
     return positions[direction]
 end

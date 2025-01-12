@@ -1,7 +1,7 @@
 function love.conf(t)
-    t.window.width = 800
-    t.window.height = 600
-    t.window.title = "Rhythm Game"
+    t.window.width = 1920
+    t.window.height = 1080
+    t.window.title = "Sound Bozo"
     t.window.vsync = true
     
     -- Enable required modules
