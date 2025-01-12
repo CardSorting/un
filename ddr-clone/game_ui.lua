@@ -2,40 +2,40 @@ local gameState = require('game_state')
 
 -- Utility functions for animations
 local function lerp(a, b, t)
-    return a + (b - a) * t * 0.7 -- Reduced intensity
+    return a + (b - a) * t * 0.5 -- Further reduced intensity
 end
 
 local function createGlowEffect(r, g, b, intensity)
-    love.graphics.setColor(r, g, b, 0.15 * intensity) -- Reduced from 0.3
+    love.graphics.setColor(r, g, b, 0.08 * intensity) -- Significantly reduced from 0.15
     return function(x, y, width, height, blur)
         for i = blur, 1, -1 do
-            love.graphics.rectangle("fill", x - i*0.7, y - i*0.7, width + i, height + i) -- Reduced spread
+            love.graphics.rectangle("fill", x - i*0.5, y - i*0.5, width + i*0.8, height + i*0.8) -- Further reduced spread
         end
     end
 end
 
 local function pulseEffect(time, min, max, speed)
-    return min + (max - min) * math.abs(math.sin(time * speed)) * 0.6 -- Reduced intensity
+    return min + (max - min) * math.abs(math.sin(time * speed)) * 0.4 -- Further reduced from 0.6
 end
 
 local function drawProgressBar(currentTime, totalTime, colors)
     local width = 400
-    local height = 12  -- Slightly reduced height
+    local height = 10  -- Further reduced height
     local x = love.graphics.getWidth()/2 - width/2
     local y = 50
     
-    -- Glow effect with reduced intensity
+    -- Glow effect with minimal intensity
     local progress = math.min(currentTime / totalTime, 1)
-    local glowIntensity = pulseEffect(love.timer.getTime(), 0.3, 0.7, 3) -- Reduced range
+    local glowIntensity = pulseEffect(love.timer.getTime(), 0.2, 0.5, 3) -- Reduced range
     local glowFunc = createGlowEffect(colors.progressFill[1], colors.progressFill[2], colors.progressFill[3], glowIntensity)
-    glowFunc(x, y, width, height, 3) -- Reduced blur
+    glowFunc(x, y, width, height, 2) -- Reduced blur
     
-    -- Draw background with subtle gradient
+    -- Draw background with minimal gradient
     local gradient = love.graphics.newMesh({
-        {0, 0, 0, 0, colors.progress[1], colors.progress[2], colors.progress[3], 0.2},
-        {width, 0, 1, 0, colors.progress[1], colors.progress[2], colors.progress[3], 0.3},
-        {width, height, 1, 1, colors.progress[1], colors.progress[2], colors.progress[3], 0.2},
-        {0, height, 0, 1, colors.progress[1], colors.progress[2], colors.progress[3], 0.3}
+        {0, 0, 0, 0, colors.progress[1], colors.progress[2], colors.progress[3], 0.15},
+        {width, 0, 1, 0, colors.progress[1], colors.progress[2], colors.progress[3], 0.2},
+        {width, height, 1, 1, colors.progress[1], colors.progress[2], colors.progress[3], 0.15},
+        {0, height, 0, 1, colors.progress[1], colors.progress[2], colors.progress[3], 0.2}
     }, "fan", "static")
     love.graphics.draw(gradient, x, y)
     
@@ -43,18 +43,18 @@ local function drawProgressBar(currentTime, totalTime, colors)
     love.graphics.setColor(colors.progressFill)
     love.graphics.rectangle("fill", x, y, width * progress, height)
     
-    -- Draw progress markers with reduced opacity
+    -- Draw progress markers with minimal opacity
     for i = 0.25, 0.75, 0.25 do
         local markerX = x + width * i
-        love.graphics.setColor(1, 1, 1, 0.3)
+        love.graphics.setColor(1, 1, 1, 0.2)
         love.graphics.rectangle("fill", markerX - 1, y, 1, height)
     end
 end
 
 local function drawSongInfo(songName, colors, fonts)
     local time = love.timer.getTime()
-    local scale = pulseEffect(time, 1, 1.03, 2) -- Reduced scale range
-    local alpha = pulseEffect(time, 0.85, 1, 3) -- Increased min alpha
+    local scale = pulseEffect(time, 1, 1.02, 2) -- Minimal scale range
+    local alpha = pulseEffect(time, 0.9, 1, 3) -- Higher min alpha
     
     love.graphics.setColor(colors.ui[1], colors.ui[2], colors.ui[3], alpha)
     love.graphics.setFont(fonts.medium)
@@ -64,11 +64,11 @@ local function drawSongInfo(songName, colors, fonts)
     local x = love.graphics.getWidth()/2
     local y = 20
     
-    -- Draw glow with reduced intensity
-    local glowFunc = createGlowEffect(colors.ui[1], colors.ui[2], colors.ui[3], 0.3)
-    glowFunc(x - textWidth/2 * scale, y, textWidth * scale, fonts.medium:getHeight() * scale, 7)
+    -- Draw minimal glow
+    local glowFunc = createGlowEffect(colors.ui[1], colors.ui[2], colors.ui[3], 0.2)
+    glowFunc(x - textWidth/2 * scale, y, textWidth * scale, fonts.medium:getHeight() * scale, 5)
     
-    -- Draw text with subtle scale
+    -- Draw text with minimal scale
     love.graphics.push()
     love.graphics.translate(x, y)
     love.graphics.scale(scale, scale)
@@ -81,20 +81,20 @@ local function drawScorePanel(score, multiplier, colors, fonts)
     local x = 50
     local y = 100
     
-    -- Draw score with subtle glow
+    -- Draw score with minimal glow
     love.graphics.setFont(fonts.large)
     local scoreText = string.format("%08d", score)
-    local glowIntensity = pulseEffect(time, 0.3, 0.7, 2) -- Reduced range
+    local glowIntensity = pulseEffect(time, 0.2, 0.5, 2) -- Reduced range
     
     local glowFunc = createGlowEffect(colors.ui[1], colors.ui[2], colors.ui[3], glowIntensity)
-    glowFunc(x, y, fonts.large:getWidth(scoreText), fonts.large:getHeight(), 5)
+    glowFunc(x, y, fonts.large:getWidth(scoreText), fonts.large:getHeight(), 3)
     
     love.graphics.setColor(colors.ui)
     love.graphics.print(scoreText, x, y)
     
-    -- Draw multiplier with reduced effects
-    local multiplierScale = pulseEffect(time, 1, 1.1, 8) -- Reduced scale range
-    local multiplierAlpha = pulseEffect(time, 0.8, 1, 6) -- Increased min alpha
+    -- Draw multiplier with minimal effects
+    local multiplierScale = pulseEffect(time, 1, 1.05, 8) -- Minimal scale range
+    local multiplierAlpha = pulseEffect(time, 0.9, 1, 6) -- Higher min alpha
     love.graphics.setColor(colors.multiplier[1], colors.multiplier[2], colors.multiplier[3], multiplierAlpha)
     love.graphics.setFont(fonts.multiplier)
     
@@ -111,11 +111,11 @@ local function drawStatsPanel(state, colors, fonts)
     local y = 100
     local time = love.timer.getTime()
     
-    -- Draw panel background with subtle gradient
-    love.graphics.setColor(0, 0, 0, 0.7)
-    love.graphics.rectangle("fill", x - 10, y - 10, 220, 120, 8, 8)
+    -- Draw panel background with minimal gradient
+    love.graphics.setColor(0, 0, 0, 0.8)
+    love.graphics.rectangle("fill", x - 10, y - 10, 220, 120, 6, 6)
     
-    -- Draw stats with subtle pulsing
+    -- Draw stats with minimal pulsing
     love.graphics.setFont(fonts.small)
     local stats = {
         {text = "Perfect: " .. state.perfectHits, color = colors.perfect},
@@ -125,7 +125,7 @@ local function drawStatsPanel(state, colors, fonts)
     }
     
     for i, stat in ipairs(stats) do
-        local alpha = pulseEffect(time + i * 0.2, 0.8, 1, 3) -- Increased min alpha
+        local alpha = pulseEffect(time + i * 0.2, 0.9, 1, 3) -- Higher min alpha
         love.graphics.setColor(stat.color[1], stat.color[2], stat.color[3], alpha)
         love.graphics.printf(stat.text, x, y + (i-1) * 25, 200, "left")
     end
@@ -133,35 +133,35 @@ end
 
 local function drawHealthBar(health, colors)
     local width = 200
-    local height = 20
+    local height = 18
     local x = love.graphics.getWidth() - width - 50
     local y = 50
     local time = love.timer.getTime()
     
-    -- Draw background with subtle gradient
-    love.graphics.setColor(0, 0, 0, 0.6)
-    love.graphics.rectangle("fill", x, y, width, height, 4, 4)
+    -- Draw background with minimal gradient
+    love.graphics.setColor(0, 0, 0, 0.7)
+    love.graphics.rectangle("fill", x, y, width, height, 3, 3)
     
     -- Calculate health color with smoother transition
     local healthColor = {
         lerp(colors.healthLow[1], colors.health[1], health/100),
         lerp(colors.healthLow[2], colors.health[2], health/100),
         lerp(colors.healthLow[3], colors.health[3], health/100),
-        0.9 -- Slightly reduced opacity
+        0.85 -- Slightly reduced opacity
     }
     
-    -- Draw health with subtle glow
-    local glowIntensity = pulseEffect(time, 0.3, 0.7, 4) -- Reduced range
+    -- Draw health with minimal glow
+    local glowIntensity = pulseEffect(time, 0.2, 0.5, 4) -- Reduced range
     local glowFunc = createGlowEffect(healthColor[1], healthColor[2], healthColor[3], glowIntensity)
-    glowFunc(x, y, width * (health/100), height, 3)
+    glowFunc(x, y, width * (health/100), height, 2)
     
     love.graphics.setColor(healthColor)
-    love.graphics.rectangle("fill", x, y, width * (health/100), height, 4, 4)
+    love.graphics.rectangle("fill", x, y, width * (health/100), height, 3, 3)
     
-    -- Draw health segments with reduced opacity
+    -- Draw health segments with minimal opacity
     for i = 1, 9 do
         local segX = x + (width * (i/10))
-        love.graphics.setColor(1, 1, 1, 0.15)
+        love.graphics.setColor(1, 1, 1, 0.1)
         love.graphics.rectangle("fill", segX - 1, y, 1, height)
     end
 end
@@ -170,8 +170,8 @@ local function drawCombo(combo, scale, colors, fonts)
     if combo < 2 then return end
     
     local time = love.timer.getTime()
-    local pulseScale = scale * pulseEffect(time, 0.95, 1.05, 8) -- Reduced scale range
-    local alpha = pulseEffect(time, 0.85, 1, 6) -- Increased min alpha
+    local pulseScale = scale * pulseEffect(time, 0.98, 1.03, 8) -- Minimal scale range
+    local alpha = pulseEffect(time, 0.9, 1, 6) -- Higher min alpha
     
     love.graphics.setColor(colors.combo[1], colors.combo[2], colors.combo[3], alpha)
     love.graphics.setFont(fonts.combo)
@@ -181,11 +181,11 @@ local function drawCombo(combo, scale, colors, fonts)
     local x = love.graphics.getWidth()/2
     local y = love.graphics.getHeight() - 150
     
-    -- Draw glow with reduced intensity
-    local glowFunc = createGlowEffect(colors.combo[1], colors.combo[2], colors.combo[3], 0.5)
-    glowFunc(x - textWidth/2 * pulseScale, y, textWidth * pulseScale, fonts.combo:getHeight() * pulseScale, 10)
+    -- Draw minimal glow
+    local glowFunc = createGlowEffect(colors.combo[1], colors.combo[2], colors.combo[3], 0.3)
+    glowFunc(x - textWidth/2 * pulseScale, y, textWidth * pulseScale, fonts.combo:getHeight() * pulseScale, 6)
     
-    -- Draw combo text with subtle scale
+    -- Draw combo text with minimal scale
     love.graphics.push()
     love.graphics.translate(x, y)
     love.graphics.scale(pulseScale, pulseScale)
@@ -195,8 +195,8 @@ end
 
 local function drawHitRating(rating, colors, fonts)
     local time = love.timer.getTime()
-    local scale = pulseEffect(time, 1, 1.1, 10) -- Reduced scale range
-    local alpha = pulseEffect(time, 0.8, 1, 8) -- Increased min alpha
+    local scale = pulseEffect(time, 1, 1.05, 10) -- Minimal scale range
+    local alpha = pulseEffect(time, 0.9, 1, 8) -- Higher min alpha
     
     love.graphics.setFont(fonts.large)
     local color
@@ -212,11 +212,11 @@ local function drawHitRating(rating, colors, fonts)
     local x = love.graphics.getWidth()/2
     local y = love.graphics.getHeight() - 200
     
-    -- Draw glow with reduced intensity
-    local glowFunc = createGlowEffect(color[1], color[2], color[3], 0.4)
-    glowFunc(x - textWidth/2 * scale, y, textWidth * scale, fonts.large:getHeight() * scale, 8)
+    -- Draw minimal glow
+    local glowFunc = createGlowEffect(color[1], color[2], color[3], 0.25)
+    glowFunc(x - textWidth/2 * scale, y, textWidth * scale, fonts.large:getHeight() * scale, 5)
     
-    -- Draw rating text with subtle effects
+    -- Draw rating text with minimal effects
     love.graphics.setColor(color[1], color[2], color[3], alpha)
     love.graphics.push()
     love.graphics.translate(x, y)
