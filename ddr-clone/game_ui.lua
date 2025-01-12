@@ -1,155 +1,106 @@
-local ui = require('ui_config')
+local gameState = require('game_state')
 
-local gameUI = {}
-
-function gameUI.drawProgressBar(gameTime, songLength, colors)
-    local width = 300
-    local height = 3
-    local x = (love.graphics.getWidth() - width) / 2
-    local y = 5
+local function drawProgressBar(currentTime, totalTime, colors)
+    local width = 400
+    local height = 10
+    local x = love.graphics.getWidth()/2 - width/2
+    local y = 50
     
-    -- Background
-    love.graphics.setColor(0, 0, 0, 0.7)  -- Dark background
+    -- Draw background
+    love.graphics.setColor(colors.progress)
     love.graphics.rectangle("fill", x, y, width, height)
     
-    -- Fill
-    local progress = math.min(gameTime / songLength, 1)
-    love.graphics.setColor(0.6, 0.6, 0.6, 0.9)  -- Light fill
+    -- Draw progress
+    love.graphics.setColor(colors.progressFill)
+    local progress = math.min(currentTime / totalTime, 1)
     love.graphics.rectangle("fill", x, y, width * progress, height)
-    
-    -- Reset color
-    love.graphics.setColor(1, 1, 1, 1)
 end
 
-function gameUI.drawSongInfo(songName, colors, fonts)
-    local width = 300
-    local height = 20
-    local x = (love.graphics.getWidth() - width) / 2
-    local y = 12
-    
-    -- Background
-    love.graphics.setColor(0, 0, 0, 0.7)
-    love.graphics.rectangle("fill", x, y, width, height)
-    
-    -- Text
-    love.graphics.setColor(1, 1, 1, 0.9)
-    love.graphics.setFont(fonts.small)
-    love.graphics.printf(songName, x, y + 2, width, "center")
-    
-    -- Reset color
-    love.graphics.setColor(1, 1, 1, 1)
-end
-
-function gameUI.drawScorePanel(score, multiplier, colors, fonts)
-    local x = 10
-    local y = 150
-    local width = 150
-    local height = 90
-    
-    -- Panel background
-    love.graphics.setColor(0, 0, 0, 0.7)
-    love.graphics.rectangle("fill", x, y, width, height)
-    
-    -- Score
-    love.graphics.setColor(1, 1, 1, 0.9)
+local function drawSongInfo(songName, colors, fonts)
+    love.graphics.setColor(colors.ui)
     love.graphics.setFont(fonts.medium)
-    love.graphics.print(string.format("%07d", score), x + 10, y + 10)
+    love.graphics.printf(songName, 0, 20, love.graphics.getWidth(), "center")
+end
+
+local function drawScorePanel(score, multiplier, colors, fonts)
+    -- Draw score
+    love.graphics.setColor(colors.ui)
+    love.graphics.setFont(fonts.large)
+    love.graphics.printf(string.format("%08d", score), 50, 100, 200, "left")
     
-    -- Multiplier
+    -- Draw multiplier
+    love.graphics.setColor(colors.multiplier)
     love.graphics.setFont(fonts.multiplier)
-    love.graphics.setColor(1, 0.5, 0.8, 0.9)
-    love.graphics.print(string.format("x%d", multiplier), x + 10, y + 50)
-    
-    -- Reset color
-    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.printf("x" .. multiplier, 50, 140, 100, "left")
 end
 
-function gameUI.drawStatsPanel(gameState, colors, fonts)
-    local width = 150
-    local height = 90
-    local x = love.graphics.getWidth() - width - 10
-    local y = 150
+local function drawStatsPanel(state, colors, fonts)
+    local x = love.graphics.getWidth() - 250
+    local y = 100
     
-    -- Panel background
-    love.graphics.setColor(0, 0, 0, 0.7)
-    love.graphics.rectangle("fill", x, y, width, height)
-    
-    -- Stats
+    love.graphics.setColor(colors.ui)
     love.graphics.setFont(fonts.small)
     
-    -- Perfect hits
-    love.graphics.setColor(0.3, 1, 0.3, 0.9)
-    love.graphics.print(string.format("Perfect: %d", gameState.perfectHits), x + 10, y + 10)
-    
-    -- Good hits
-    love.graphics.setColor(0.3, 0.3, 1, 0.9)
-    love.graphics.print(string.format("Good: %d", gameState.goodHits), x + 10, y + 30)
-    
-    -- Misses
-    love.graphics.setColor(1, 0.3, 0.3, 0.9)
-    love.graphics.print(string.format("Miss: %d", gameState.missedHits), x + 10, y + 50)
-    
-    -- Accuracy
-    love.graphics.setColor(1, 1, 1, 0.9)
-    local totalNotes = gameState.perfectHits + gameState.goodHits + gameState.missedHits
-    local accuracy = totalNotes > 0 and
-        math.floor((gameState.perfectHits + gameState.goodHits * 0.5) / totalNotes * 100) or 100
-    love.graphics.print(string.format("Acc: %d%%", accuracy), x + 10, y + 70)
-    
-    -- Reset color
-    love.graphics.setColor(1, 1, 1, 1)
+    -- Draw hit stats
+    love.graphics.printf("Perfect: " .. state.perfectHits, x, y, 200, "left")
+    love.graphics.printf("Good: " .. state.goodHits, x, y + 25, 200, "left")
+    love.graphics.printf("Miss: " .. state.missedHits, x, y + 50, 200, "left")
+    love.graphics.printf("Max Combo: " .. state.maxCombo, x, y + 75, 200, "left")
 end
 
-function gameUI.drawHealthBar(health, colors)
+local function drawHealthBar(health, colors)
     local width = 200
-    local height = 6
-    local x = (love.graphics.getWidth() - width) / 2
-    local y = love.graphics.getHeight() - 10
+    local height = 20
+    local x = love.graphics.getWidth() - width - 50
+    local y = 50
     
-    -- Background
-    love.graphics.setColor(0, 0, 0, 0.7)
+    -- Draw background
+    love.graphics.setColor(0, 0, 0, 0.5)
     love.graphics.rectangle("fill", x, y, width, height)
     
-    -- Health bar
-    if health > 30 then
-        love.graphics.setColor(0.3, 1, 0.3, 0.9)  -- Green for healthy
-    else
-        love.graphics.setColor(1, 0.3, 0.3, 0.9)  -- Red for low health
-    end
-    love.graphics.rectangle("fill", x, y, (width * health) / 100, height)
+    -- Draw health
+    local healthColor = health < 30 and colors.healthLow or colors.health
+    love.graphics.setColor(healthColor)
+    love.graphics.rectangle("fill", x, y, width * (health/100), height)
+end
+
+local function drawCombo(combo, scale, colors, fonts)
+    love.graphics.setColor(colors.combo)
+    love.graphics.setFont(fonts.combo)
     
-    -- Reset color
-    love.graphics.setColor(1, 1, 1, 1)
+    -- Draw with scale effect
+    local text = combo .. " COMBO"
+    local textWidth = fonts.combo:getWidth(text)
+    local x = love.graphics.getWidth()/2
+    local y = love.graphics.getHeight() - 150
+    
+    love.graphics.push()
+    love.graphics.translate(x, y)
+    love.graphics.scale(scale, scale)
+    love.graphics.printf(text, -textWidth/2, 0, textWidth, "center")
+    love.graphics.pop()
 end
 
-function gameUI.drawCombo(combo, scale, colors, fonts)
-    if combo > 0 then
-        love.graphics.setFont(fonts.combo)
-        love.graphics.setColor(1, 0.8, 0.2, 0.9)
-        love.graphics.push()
-        love.graphics.translate(love.graphics.getWidth()/2, 60)
-        love.graphics.scale(scale * 0.7)
-        love.graphics.printf(string.format("%d", combo), -50, 0, 100, "center")
-        love.graphics.pop()
-        
-        -- Reset color
-        love.graphics.setColor(1, 1, 1, 1)
-    end
-end
-
-function gameUI.drawHitRating(rating, colors, fonts)
-    love.graphics.setFont(fonts.medium)
+local function drawHitRating(rating, colors, fonts)
+    love.graphics.setFont(fonts.large)
+    
     if rating == "Perfect" then
-        love.graphics.setColor(0.3, 1, 0.3, 0.9)
+        love.graphics.setColor(colors.perfect)
     elseif rating == "Good" then
-        love.graphics.setColor(0.3, 0.3, 1, 0.9)
+        love.graphics.setColor(colors.good)
     else
-        love.graphics.setColor(1, 0.3, 0.3, 0.9)
+        love.graphics.setColor(colors.miss)
     end
-    love.graphics.printf(rating, 0, 30, love.graphics.getWidth(), "center")
     
-    -- Reset color
-    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.printf(rating, 0, love.graphics.getHeight() - 200, love.graphics.getWidth(), "center")
 end
 
-return gameUI
+return {
+    drawProgressBar = drawProgressBar,
+    drawSongInfo = drawSongInfo,
+    drawScorePanel = drawScorePanel,
+    drawStatsPanel = drawStatsPanel,
+    drawHealthBar = drawHealthBar,
+    drawCombo = drawCombo,
+    drawHitRating = drawHitRating
+}
