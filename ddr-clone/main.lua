@@ -1,20 +1,42 @@
+local menu = require('menu')
+local ui = require('ui_config')
+local gameUI = require('game_ui')
+local gameplay = require('gameplay')
+local gameOver = require('game_over')
+
 function love.load()
     -- Initialize game state
     gameState = {
         current = "mainMenu",  -- mainMenu, songSelect, game, gameover
         score = 0,
         combo = 0,
+        maxCombo = 0,
         health = 100,
         selectedMenuItem = 1,
         selectedSong = 1,
         gameTime = 0,
-        nextArrowIndex = 1
+        nextArrowIndex = 1,
+        lastHitRating = nil,
+        hitRatingTimer = 0,
+        comboScale = 1,
+        comboTimer = 0,
+        multiplier = 1,
+        perfectHits = 0,
+        goodHits = 0,
+        missedHits = 0,
+        laneEffects = {
+            left = 0,
+            down = 0,
+            up = 0,
+            right = 0
+        },
+        hitEffects = {}
     }
     
     -- Menu items
     menuItems = {
         {text = "Play", action = function() gameState.current = "songSelect" end},
-        {text = "Options", action = function() end},  -- Placeholder for options
+        {text = "Options", action = function() end},
         {text = "Exit", action = function() love.event.quit() end}
     }
     
@@ -25,30 +47,42 @@ function love.load()
         require("songs/song3/pattern")
     }
     
-    -- Colors for different arrows
-    arrowColors = {
-        left = {1, 0, 0},    -- Red
-        down = {0, 1, 0},    -- Green
-        up = {0, 0, 1},      -- Blue
-        right = {1, 1, 0}    -- Yellow
+    -- Colors
+    colors = {
+        background = {0.1, 0.1, 0.1},
+        ui = {0.9, 0.9, 0.9},
+        uiDark = {0.7, 0.7, 0.7},
+        health = {0.2, 0.8, 0.2},
+        healthLow = {0.8, 0.2, 0.2},
+        combo = {1, 0.8, 0.2},
+        perfect = {0.3, 1, 0.3},
+        good = {0.3, 0.3, 1},
+        miss = {1, 0.3, 0.3},
+        progress = {0.4, 0.4, 0.4},
+        progressFill = {0.6, 0.6, 0.6},
+        multiplier = {1, 0.5, 0.8},
+        laneEffect = {1, 1, 1, 0.2}
     }
     
-    -- Initialize arrow targets (static arrows at top)
-    targetArrows = {
-        {x = 100, y = 100, direction = "left"},
-        {x = 200, y = 100, direction = "down"},
-        {x = 300, y = 100, direction = "up"},
-        {x = 400, y = 100, direction = "right"}
-    }
-    
-    -- Initialize moving arrows
+    -- Initialize gameplay elements
+    arrowColors = gameplay.createArrowColors()
+    targetArrows = gameplay.createTargetArrows()
     movingArrows = {}
     
     -- Load fonts
     fonts = {
+        title = love.graphics.newFont(48),
         large = love.graphics.newFont(32),
         medium = love.graphics.newFont(24),
-        small = love.graphics.newFont(20)
+        small = love.graphics.newFont(20),
+        combo = love.graphics.newFont(36),
+        multiplier = love.graphics.newFont(28)
+    }
+    
+    -- Hit detection settings
+    hitSettings = {
+        threshold = 45,    -- Total hit window
+        perfect = 15      -- Perfect hit window
     }
 end
 
@@ -57,35 +91,67 @@ function love.update(dt)
         -- Update game time
         gameState.gameTime = gameState.gameTime + dt
         
-        -- Update moving arrows
+        -- Update timers
+        if gameState.hitRatingTimer > 0 then
+            gameState.hitRatingTimer = gameState.hitRatingTimer - dt
+        end
+        
+        if gameState.comboTimer > 0 then
+            gameState.comboTimer = gameState.comboTimer - dt
+            gameState.comboScale = 1 + (gameState.comboTimer / 0.1) * 0.5
+        end
+        
+        -- Update effects
+        for direction, timer in pairs(gameState.laneEffects) do
+            if timer > 0 then
+                gameState.laneEffects[direction] = timer - dt
+            end
+        end
+        
+        for i = #gameState.hitEffects, 1, -1 do
+            local effect = gameState.hitEffects[i]
+            effect.timer = effect.timer - dt
+            effect.y = effect.y - 100 * dt
+            effect.alpha = effect.timer / effect.duration
+            if effect.timer <= 0 then
+                table.remove(gameState.hitEffects, i)
+            end
+        end
+        
+        -- Update arrows
         for i = #movingArrows, 1, -1 do
             local arrow = movingArrows[i]
             arrow.y = arrow.y - (300 * dt)
             
             if arrow.y < 0 then
                 table.remove(movingArrows, i)
-                gameState.health = gameState.health - 5
+                gameState.health = math.max(0, gameState.health - 5)
                 gameState.combo = 0
+                gameState.multiplier = 1
+                gameState.missedHits = gameState.missedHits + 1
+                gameState.lastHitRating = "Miss"
+                gameState.hitRatingTimer = 0.5
             end
         end
         
-        -- Spawn arrows based on pattern
+        -- Update multiplier
+        gameState.multiplier = math.min(4, 1 + math.floor(gameState.combo / 10))
+        
+        -- Spawn new arrows
         local currentSong = songs[gameState.selectedSong]
         while gameState.nextArrowIndex <= #currentSong.arrows do
             local nextArrow = currentSong.arrows[gameState.nextArrowIndex]
             if nextArrow.time <= gameState.gameTime then
-                local x = 100
-                if nextArrow.direction == "down" then x = 200
-                elseif nextArrow.direction == "up" then x = 300
-                elseif nextArrow.direction == "right" then x = 400 end
-                
-                table.insert(movingArrows, {
-                    x = x,
-                    y = 600,
-                    direction = nextArrow.direction,
-                    time = nextArrow.time
-                })
-                gameState.nextArrowIndex = gameState.nextArrowIndex + 1
+                local x = gameplay.getArrowXPosition(nextArrow.direction)
+                if x then  -- Make sure we got a valid position
+                    table.insert(movingArrows, {
+                        x = x,
+                        y = ui.gameArea.spawnY,
+                        direction = nextArrow.direction,
+                        time = nextArrow.time
+                    })
+                    gameState.nextArrowIndex = gameState.nextArrowIndex + 1
+                end
             else
                 break
             end
@@ -94,113 +160,69 @@ function love.update(dt)
         -- Check for song end
         if gameState.nextArrowIndex > #currentSong.arrows and #movingArrows == 0 then
             gameState.current = "gameover"
+            gameOver.reset()  -- Reset game over animations
         end
         
         if gameState.health <= 0 then
             gameState.current = "gameover"
+            gameOver.reset()  -- Reset game over animations
         end
+    elseif gameState.current == "gameover" then
+        gameOver.update(dt)
     end
-end
-
--- Helper function to draw an arrow
-function drawArrow(x, y, direction)
-    local color = arrowColors[direction]
-    love.graphics.setColor(color)
-    
-    if direction == "up" then
-        love.graphics.polygon("fill", x+25, y, x+50, y+30, x, y+30)
-    elseif direction == "down" then
-        love.graphics.polygon("fill", x+25, y+30, x+50, y, x, y)
-    elseif direction == "left" then
-        love.graphics.polygon("fill", x, y+15, x+30, y+30, x+30, y)
-    elseif direction == "right" then
-        love.graphics.polygon("fill", x+30, y+15, x, y+30, x, y)
-    end
-    
-    love.graphics.setColor(1, 1, 1)
-end
-
-function drawMainMenu()
-    love.graphics.setFont(fonts.large)
-    love.graphics.printf("Rhythm Game", 0, 100, love.graphics.getWidth(), "center")
-    
-    love.graphics.setFont(fonts.medium)
-    for i, item in ipairs(menuItems) do
-        local y = 250 + (i-1) * 50
-        local text = item.text
-        if i == gameState.selectedMenuItem then
-            text = "> " .. text .. " <"
-        end
-        love.graphics.printf(text, 0, y, love.graphics.getWidth(), "center")
-    end
-end
-
-function drawSongSelect()
-    love.graphics.setFont(fonts.large)
-    love.graphics.printf("Song Selection", 0, 50, love.graphics.getWidth(), "center")
-    
-    love.graphics.setFont(fonts.medium)
-    for i, song in ipairs(songs) do
-        local y = 150 + (i-1) * 100
-        local text = song.name
-        if i == gameState.selectedSong then
-            text = "> " .. text .. " <"
-            
-            -- Show song details
-            love.graphics.setFont(fonts.small)
-            love.graphics.printf("Difficulty: " .. song.difficulty, 0, y + 40, love.graphics.getWidth(), "center")
-            love.graphics.printf("BPM: " .. song.bpm, 0, y + 60, love.graphics.getWidth(), "center")
-            love.graphics.setFont(fonts.medium)
-        else
-            love.graphics.printf(text, 0, y, love.graphics.getWidth(), "center")
-        end
-    end
-    
-    love.graphics.setFont(fonts.small)
-    love.graphics.printf("Press Enter to select, Escape to return", 0, 500, love.graphics.getWidth(), "center")
 end
 
 function love.draw()
+    love.graphics.setBackgroundColor(colors.background)
+    
     if gameState.current == "mainMenu" then
-        drawMainMenu()
+        menu.drawMainMenu()
         
     elseif gameState.current == "songSelect" then
-        drawSongSelect()
+        menu.drawSongSelect()
         
     elseif gameState.current == "game" then
-        -- Draw target arrows
+        -- Draw gameplay elements
+        gameplay.drawLaneEffects(targetArrows, gameState.laneEffects)
+        gameplay.drawHitEffects(gameState.hitEffects, colors)
+        
+        -- Draw arrows
         for _, arrow in ipairs(targetArrows) do
-            drawArrow(arrow.x, arrow.y, arrow.direction)
+            gameplay.drawArrow(arrow.x, arrow.y, arrow.direction, true, arrowColors)
         end
         
-        -- Draw moving arrows
         for _, arrow in ipairs(movingArrows) do
-            drawArrow(arrow.x, arrow.y, arrow.direction)
+            gameplay.drawArrow(arrow.x, arrow.y, arrow.direction, false, arrowColors)
         end
         
-        -- Draw UI
-        love.graphics.setFont(fonts.small)
-        love.graphics.print("Score: " .. gameState.score, 10, 10)
-        love.graphics.print("Combo: " .. gameState.combo, 10, 40)
-        love.graphics.print("Health: " .. gameState.health, 10, 70)
-        
-        -- Draw current song info
+        -- Draw UI elements
         local currentSong = songs[gameState.selectedSong]
-        love.graphics.printf(currentSong.name, 0, 10, love.graphics.getWidth() - 20, "right")
-        love.graphics.printf(string.format("Time: %.1f", gameState.gameTime), 0, 40, love.graphics.getWidth() - 20, "right")
-    
-    elseif gameState.current == "gameover" then
-        love.graphics.setFont(fonts.large)
-        if gameState.health <= 0 then
-            love.graphics.printf("Game Over!", 0, 200, love.graphics.getWidth(), "center")
-        else
-            love.graphics.printf("Song Complete!", 0, 200, love.graphics.getWidth(), "center")
+        local songLength = currentSong.arrows[#currentSong.arrows].time
+        
+        gameUI.drawProgressBar(gameState.gameTime, songLength, colors)
+        gameUI.drawSongInfo(currentSong.name, colors, fonts)
+        gameUI.drawScorePanel(gameState.score, gameState.multiplier, colors, fonts)
+        gameUI.drawStatsPanel(gameState, colors, fonts)
+        gameUI.drawHealthBar(gameState.health, colors)
+        
+        if gameState.combo > 0 then
+            gameUI.drawCombo(gameState.combo, gameState.comboScale, colors, fonts)
         end
         
-        love.graphics.setFont(fonts.medium)
-        love.graphics.printf("Final Score: " .. gameState.score, 0, 300, love.graphics.getWidth(), "center")
-        love.graphics.printf("Max Combo: " .. gameState.combo, 0, 350, love.graphics.getWidth(), "center")
-        love.graphics.printf("Press R to Return to Menu", 0, 450, love.graphics.getWidth(), "center")
+        if gameState.hitRatingTimer > 0 then
+            gameUI.drawHitRating(gameState.lastHitRating, colors, fonts)
+        end
+        
+    elseif gameState.current == "gameover" then
+        -- Draw the gameplay screen in the background with reduced opacity
+        love.graphics.setColor(1, 1, 1, 0.3)
+        for _, arrow in ipairs(targetArrows) do
+            gameplay.drawArrow(arrow.x, arrow.y, arrow.direction, true, arrowColors)
+        end
+        love.graphics.setColor(1, 1, 1, 1)
+        
+        -- Draw the animated game over screen
+        gameOver.draw(gameState, colors, fonts)
     end
 end
 
@@ -223,43 +245,65 @@ function love.keypressed(key)
             gameState.current = "game"
             gameState.score = 0
             gameState.combo = 0
+            gameState.maxCombo = 0
             gameState.health = 100
             gameState.gameTime = 0
             gameState.nextArrowIndex = 1
+            gameState.lastHitRating = nil
+            gameState.hitRatingTimer = 0
+            gameState.multiplier = 1
+            gameState.perfectHits = 0
+            gameState.goodHits = 0
+            gameState.missedHits = 0
+            gameState.hitEffects = {}
             movingArrows = {}
+            -- Reset target arrows when starting new game
+            targetArrows = gameplay.createTargetArrows()
         elseif key == "escape" then
             gameState.current = "mainMenu"
         end
         
     elseif gameState.current == "game" then
-        local hitThreshold = 30
-        local perfectThreshold = 10
-        
         if key == "left" or key == "down" or key == "up" or key == "right" then
-            local targetY = 100
             local hit = false
+            gameState.laneEffects[key] = 0.1
             
             for i = #movingArrows, 1, -1 do
                 local arrow = movingArrows[i]
-                if arrow.direction == key and math.abs(arrow.y - targetY) < hitThreshold then
-                    hit = true
-                    table.remove(movingArrows, i)
-                    
-                    local accuracy = math.abs(arrow.y - targetY)
-                    if accuracy < perfectThreshold then
-                        gameState.score = gameState.score + 100
+                if arrow.direction == key and gameplay.isArrowInLane(arrow, key) then
+                    local hitResult = gameplay.checkHit(arrow, ui.gameArea.targetY, hitSettings.threshold, hitSettings.perfect)
+                    if hitResult then
+                        hit = true
+                        table.remove(movingArrows, i)
+                        
+                        if hitResult == "Perfect" then
+                            gameState.score = gameState.score + (100 * gameState.multiplier)
+                            gameState.perfectHits = gameState.perfectHits + 1
+                        else
+                            gameState.score = gameState.score + (50 * gameState.multiplier)
+                            gameState.goodHits = gameState.goodHits + 1
+                        end
+                        
                         gameState.combo = gameState.combo + 1
-                    else
-                        gameState.score = gameState.score + 50
-                        gameState.combo = gameState.combo + 1
+                        gameState.maxCombo = math.max(gameState.maxCombo, gameState.combo)
+                        gameState.lastHitRating = hitResult
+                        gameState.hitRatingTimer = 0.5
+                        gameState.comboTimer = 0.1
+                        gameState.comboScale = 1.5
+                        
+                        table.insert(gameState.hitEffects, gameplay.addHitEffect(arrow.x, arrow.y, hitResult))
+                        break
                     end
-                    break
                 end
             end
             
             if not hit then
                 gameState.combo = 0
-                gameState.health = gameState.health - 5
+                gameState.multiplier = 1
+                gameState.health = math.max(0, gameState.health - 5)
+                gameState.missedHits = gameState.missedHits + 1
+                gameState.lastHitRating = "Miss"
+                gameState.hitRatingTimer = 0.5
             end
         elseif key == "escape" then
             gameState.current = "songSelect"
@@ -267,5 +311,6 @@ function love.keypressed(key)
         
     elseif gameState.current == "gameover" and key == "r" then
         gameState.current = "mainMenu"
+        gameOver.reset()
     end
 end
