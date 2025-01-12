@@ -44,11 +44,18 @@ local function drawSongSelect()
     love.graphics.setFont(gameState.fonts.title)
     love.graphics.printf("Song Selection", 0, 50, love.graphics.getWidth(), "center")
     
-    -- Draw song list
-    love.graphics.setFont(gameState.fonts.medium)
+    -- Calculate pagination
     local songs = songManager.getSongs()
-    for i, song in ipairs(songs) do
-        local y = 150 + (i-1) * 100
+    local startIndex = (gameState.state.currentPage - 1) * gameState.state.songsPerPage + 1
+    local endIndex = math.min(startIndex + gameState.state.songsPerPage - 1, #songs)
+    local totalPages = math.ceil(#songs / gameState.state.songsPerPage)
+    
+    -- Draw song list for current page
+    love.graphics.setFont(gameState.fonts.medium)
+    for i = startIndex, endIndex do
+        local song = songs[i]
+        local displayIndex = i - startIndex + 1
+        local y = 150 + (displayIndex-1) * 100
         local text = song.name
         
         -- Create song panel
@@ -72,10 +79,35 @@ local function drawSongSelect()
         love.graphics.printf(text, 0, y, love.graphics.getWidth(), "center")
     end
     
-    -- Draw instructions
+    -- Draw pagination controls
     love.graphics.setColor(gameState.colors.ui)
     love.graphics.setFont(gameState.fonts.small)
+    
+    -- Previous page button
+    if gameState.state.currentPage > 1 then
+        love.graphics.setColor(gameState.colors.ui)
+    else
+        love.graphics.setColor(gameState.colors.uiDark)
+    end
+    love.graphics.printf("< Prev", love.graphics.getWidth()/2 - 200, 450, 100, "left")
+    
+    -- Page indicator
+    love.graphics.setColor(gameState.colors.ui)
+    love.graphics.printf(string.format("Page %d/%d", gameState.state.currentPage, totalPages),
+        0, 450, love.graphics.getWidth(), "center")
+    
+    -- Next page button
+    if gameState.state.currentPage < totalPages then
+        love.graphics.setColor(gameState.colors.ui)
+    else
+        love.graphics.setColor(gameState.colors.uiDark)
+    end
+    love.graphics.printf("Next >", love.graphics.getWidth()/2 + 100, 450, 100, "right")
+    
+    -- Draw instructions
+    love.graphics.setColor(gameState.colors.ui)
     love.graphics.printf("Press Enter to select, Escape to return", 0, 500, love.graphics.getWidth(), "center")
+    love.graphics.printf("Left/Right to change pages", 0, 520, love.graphics.getWidth(), "center")
 end
 
 return {

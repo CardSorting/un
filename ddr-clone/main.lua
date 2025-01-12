@@ -183,11 +183,29 @@ function love.keypressed(key)
             gameState.state.totalScore = 0
         end
     elseif gameState.state.current == "songSelect" then
-        if key == "up" then
-            gameState.state.selectedSong = math.max(1, gameState.state.selectedSong - 1)
+        local songs = songManager.getSongs()
+        local totalPages = math.ceil(#songs / gameState.state.songsPerPage)
+        local startIndex = (gameState.state.currentPage - 1) * gameState.state.songsPerPage + 1
+        local endIndex = math.min(startIndex + gameState.state.songsPerPage - 1, #songs)
+
+        if key == "left" then
+            if gameState.state.currentPage > 1 then
+                gameState.state.currentPage = gameState.state.currentPage - 1
+                gameState.state.selectedSong = (gameState.state.currentPage - 1) * gameState.state.songsPerPage + 1
+            end
+        elseif key == "right" then
+            if gameState.state.currentPage < totalPages then
+                gameState.state.currentPage = gameState.state.currentPage + 1
+                gameState.state.selectedSong = (gameState.state.currentPage - 1) * gameState.state.songsPerPage + 1
+            end
+        elseif key == "up" then
+            if gameState.state.selectedSong > startIndex then
+                gameState.state.selectedSong = gameState.state.selectedSong - 1
+            end
         elseif key == "down" then
-            local songs = songManager.getSongs()
-            gameState.state.selectedSong = math.min(#songs, gameState.state.selectedSong + 1)
+            if gameState.state.selectedSong < endIndex then
+                gameState.state.selectedSong = gameState.state.selectedSong + 1
+            end
         elseif key == "return" then
             gameState.state.current = "game"
             gameState.state.score = 0
@@ -208,7 +226,6 @@ function love.keypressed(key)
             
             -- Start playing the selected song
             songManager.stopCurrentSong(gameState.state.currentMusic)
-            local songs = songManager.getSongs()
             gameState.state.currentMusic = songs[gameState.state.selectedSong].music
             gameState.state.currentMusic:play()
         elseif key == "escape" then
