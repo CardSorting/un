@@ -9,7 +9,7 @@ local function drawMainMenu()
 
     -- Draw title
     love.graphics.setFont(gameState.fonts.title)
-    love.graphics.printf("Rhythm Game", 0, 100, love.graphics.getWidth(), "center")
+    love.graphics.printf("Sound Bozo", 0, 100, love.graphics.getWidth(), "center")
     
     -- Draw menu items
     love.graphics.setFont(gameState.fonts.medium)
