@@ -24,6 +24,9 @@ function love.load()
         perfectHits = 0,
         goodHits = 0,
         missedHits = 0,
+        stagesCleared = 0,
+        totalScore = 0,
+        isGameOver = false,  -- true for game over, false for stage clear
         laneEffects = {
             left = 0,
             down = 0,
@@ -159,13 +162,17 @@ function love.update(dt)
         
         -- Check for song end
         if gameState.nextArrowIndex > #currentSong.arrows and #movingArrows == 0 then
+            gameState.stagesCleared = gameState.stagesCleared + 1
+            gameState.totalScore = gameState.totalScore + gameState.score
+            gameState.isGameOver = gameState.stagesCleared >= 3
             gameState.current = "gameover"
-            gameOver.reset()  -- Reset game over animations
+            gameOver.reset()
         end
         
         if gameState.health <= 0 then
+            gameState.isGameOver = true
             gameState.current = "gameover"
-            gameOver.reset()  -- Reset game over animations
+            gameOver.reset()
         end
     elseif gameState.current == "gameover" then
         gameOver.update(dt)
@@ -234,6 +241,9 @@ function love.keypressed(key)
             gameState.selectedMenuItem = math.min(#menuItems, gameState.selectedMenuItem + 1)
         elseif key == "return" then
             menuItems[gameState.selectedMenuItem].action()
+            -- Reset stages and total score when starting new game
+            gameState.stagesCleared = 0
+            gameState.totalScore = 0
         end
         
     elseif gameState.current == "songSelect" then
@@ -310,7 +320,11 @@ function love.keypressed(key)
         end
         
     elseif gameState.current == "gameover" and key == "r" then
-        gameState.current = "mainMenu"
+        if gameState.isGameOver then
+            gameState.current = "mainMenu"
+        else
+            gameState.current = "songSelect"
+        end
         gameOver.reset()
     end
 end

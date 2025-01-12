@@ -115,11 +115,11 @@ function renderer.draw(gameState, animations, fonts)
         local currentY = panelY + panel.padding.vertical
         
         -- Draw title section
-        local titleColor = gameState.health <= 0 and config.colors.grade.D or config.colors.grade.S
+        local titleColor = gameState.isGameOver and config.colors.grade.D or config.colors.grade.S
         love.graphics.setFont(fonts.title)
         love.graphics.setColor(titleColor[1], titleColor[2], titleColor[3], animations.state.fadeIn)
         love.graphics.printf(
-            gameState.health <= 0 and "GAME OVER" or "STAGE CLEAR",
+            gameState.isGameOver and "GAME OVER" or "STAGE CLEAR",
             0, currentY, width, "center"
         )
         
@@ -140,12 +140,21 @@ function renderer.draw(gameState, animations, fonts)
             love.graphics.setColor(gradeColor[1], gradeColor[2], gradeColor[3], animations.state.scoreCount)
             love.graphics.printf(grade, 0, currentY, width, "center")
             
-            -- Draw score
+            -- Draw stage info
+            currentY = currentY + sections.grade.scoreSpacing
+            love.graphics.setFont(fonts.medium)
+            love.graphics.setColor(config.colors.text.highlight)
+            love.graphics.printf(string.format("Stage %d / 3", gameState.stagesCleared), 0, currentY, width, "center")
+            
+            -- Draw scores
             currentY = currentY + sections.grade.scoreSpacing
             local displayScore = math.floor(gameState.score * animations.state.scoreCount)
+            local displayTotalScore = math.floor(gameState.totalScore * animations.state.scoreCount)
             love.graphics.setFont(fonts.large)
             love.graphics.setColor(config.colors.text.highlight)
-            love.graphics.printf(string.format("%07d", displayScore), 0, currentY, width, "center")
+            love.graphics.printf(string.format("Stage Score: %07d", displayScore), 0, currentY, width, "center")
+            currentY = currentY + sections.grade.scoreSpacing
+            love.graphics.printf(string.format("Total Score: %07d", displayTotalScore), 0, currentY, width, "center")
             
             -- Draw stats section
             currentY = currentY + sections.grade.height
@@ -194,7 +203,9 @@ function renderer.draw(gameState, animations, fonts)
             love.graphics.setFont(fonts.medium)
             love.graphics.setColor(config.colors.text.primary[1], config.colors.text.primary[2],
                 config.colors.text.primary[3], promptAlpha)
-            love.graphics.printf("Press R to Return", 0, promptY, width, "center")
+            
+            local promptText = gameState.isGameOver and "Press R to Return" or "Press R to Continue"
+            love.graphics.printf(promptText, 0, promptY, width, "center")
         end
     end
 end
