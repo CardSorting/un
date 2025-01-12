@@ -3,11 +3,19 @@ local ui = require('ui_config')
 local gameUI = require('game_ui')
 local gameplay = require('gameplay')
 local gameOver = require('game_over')
+local editor = require('editor')
 
 function love.load()
+    -- Create required directories in save directory
+    love.filesystem.createDirectory("assets")
+    love.filesystem.createDirectory("songs")
+    
+    -- Print save directory location for debugging
+    print("Save directory: " .. love.filesystem.getSaveDirectory())
+    
     -- Initialize game state
     gameState = {
-        current = "mainMenu",  -- mainMenu, songSelect, game, gameover
+        current = "mainMenu",  -- mainMenu, songSelect, game, gameover, editor
         score = 0,
         combo = 0,
         maxCombo = 0,
@@ -26,8 +34,8 @@ function love.load()
         missedHits = 0,
         stagesCleared = 0,
         totalScore = 0,
-        isGameOver = false,  -- true for game over, false for stage clear
-        currentMusic = nil,  -- Store current music source
+        isGameOver = false,
+        currentMusic = nil,
         laneEffects = {
             left = 0,
             down = 0,
@@ -37,9 +45,20 @@ function love.load()
         hitEffects = {}
     }
     
+    -- Initialize editor state
+    editorState = {
+        recording = false,
+        currentTime = 0,
+        arrows = {},
+        songName = nil,
+        audioPath = nil,
+        currentMusic = nil
+    }
+    
     -- Menu items
     menuItems = {
         {text = "Play", action = function() gameState.current = "songSelect" end},
+        {text = "Create Beat Map", action = function() gameState.current = "editor" end},
         {text = "Options", action = function() end},
         {text = "Exit", action = function() love.event.quit() end}
     }
@@ -51,9 +70,41 @@ function love.load()
         require("songs/song3/pattern")
     }
     
+    -- Load custom songs from save directory if they exist
+    if love.filesystem.getInfo("songs") then
+        local items = love.filesystem.getDirectoryItems("songs")
+        for _, dir in ipairs(items) do
+            if dir:match("^custom_") then
+                local patternPath = "songs/" .. dir .. "/pattern.lua"
+                if love.filesystem.getInfo(patternPath) then
+                    local success, pattern = pcall(require, patternPath:sub(1, -5))  -- Remove .lua extension
+                    if success then
+                        -- Update audio path to use save directory for custom songs
+                        if pattern.audio:match("^assets/") then
+                            pattern.audio = love.filesystem.getSaveDirectory() .. "/" .. pattern.audio
+                        end
+                        table.insert(songs, pattern)
+                        print("Loaded custom song: " .. pattern.name)
+                    else
+                        print("Failed to load pattern: " .. patternPath)
+                        print("Error: " .. tostring(pattern))
+                    end
+                end
+            end
+        end
+    end
+    
     -- Load song audio files
     for _, song in ipairs(songs) do
-        song.music = love.audio.newSource(song.audio, "stream")
+        local success, source = pcall(love.audio.newSource, song.audio, "stream")
+        if success then
+            song.music = source
+            print("Loaded audio for song: " .. song.name)
+        else
+            print("Failed to load audio for song: " .. song.name)
+            print("Audio path: " .. song.audio)
+            print("Error: " .. tostring(source))
+        end
     end
     
     -- Colors
@@ -90,8 +141,8 @@ function love.load()
     
     -- Hit detection settings
     hitSettings = {
-        threshold = 45,    -- Total hit window
-        perfect = 15      -- Perfect hit window
+        threshold = 45,
+        perfect = 15
     }
 end
 
@@ -188,6 +239,8 @@ function love.update(dt)
         end
     elseif gameState.current == "gameover" then
         gameOver.update(dt)
+    elseif gameState.current == "editor" then
+        editor.updateEditor(dt)
     end
 end
 
@@ -242,6 +295,8 @@ function love.draw()
         
         -- Draw the animated game over screen
         gameOver.draw(gameState, colors, fonts)
+    elseif gameState.current == "editor" then
+        editor.drawEditor()
     end
 end
 
@@ -347,5 +402,54 @@ function love.keypressed(key)
             gameState.current = "songSelect"
         end
         gameOver.reset()
+    elseif gameState.current == "editor" then
+        editor.handleEditorKeyPress(key)
+    end
+end
+
+-- Add file drop handler for the editor
+function love.filedropped(file)
+    if gameState.current == "editor" then
+        local filename = file:getFilename()
+        if filename:match("%.mp3$") then
+            -- Get the file data
+            file:open("r")
+            local data = file:read("data")  -- Use "data" mode for binary files
+            file:close()
+            
+            -- Save the file to LÖVE's save directory
+            local basename = filename:match("[^/\\]+$")
+            local newPath = "assets/" .. basename
+            
+            -- Debug print
+            print("Save directory: " .. love.filesystem.getSaveDirectory())
+            print("Attempting to save file: " .. newPath)
+            
+            -- Write the file
+            local success = love.filesystem.write(newPath, data)
+            if not success then
+                print("Failed to write file to: " .. newPath)
+                return
+            end
+            print("Successfully wrote file")
+            
+            -- Update editor state
+            editorState.songName = basename:match("(.+)%.mp3$")
+            editorState.audioPath = newPath
+            
+            -- Try to load the audio file
+            local success, sourceOrError = pcall(function()
+                return love.audio.newSource(newPath, "stream")
+            end)
+            
+            if success then
+                editorState.currentMusic = sourceOrError
+                print("Successfully loaded audio source")
+            else
+                print("Failed to load audio source: " .. tostring(sourceOrError))
+            end
+        else
+            print("Invalid file type. Please use MP3 format.")
+        end
     end
 end
