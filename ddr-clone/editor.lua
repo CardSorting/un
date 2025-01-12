@@ -4,82 +4,99 @@ local songManager = require('song_manager')
 local gameplay = require('gameplay')
 local gameUI = require('game_ui')
 
--- Hold state tracking
-local holdState = {
-    left = { active = false, startTime = 0, visible = false },
-    down = { active = false, startTime = 0, visible = false },
-    up = { active = false, startTime = 0, visible = false },
-    right = { active = false, startTime = 0, visible = false }
-}
+-- Use gameState.editor for state to ensure sync
+local function getEditorState()
+    return gameState.editor
+end
 
 local targetArrows = gameplay.createTargetArrows()
 local arrowColors = gameplay.createArrowColors()
 
+-- Simple active key tracking
+local activeKeys = {
+    left = false,
+    down = false,
+    up = false,
+    right = false
+}
+
+local status = {
+    message = "",
+    time = 0
+}
+
+local countdown = {
+    active = false,
+    time = 0
+}
+
+local function setStatus(message, duration)
+    status.message = message
+    status.time = duration or 3
+end
+
 local function silenceAllMusic()
-    -- Stop menu music
-    if gameState.menuMusic then
-        gameState.menuMusic:stop()
-    end
-    
-    -- Stop any current editor music
-    if gameState.editor.currentMusic then
-        gameState.editor.currentMusic:stop()
-    end
-    
-    -- Stop any gameplay music
-    if gameState.currentSong and gameState.currentSong.music then
-        gameState.currentSong.music:stop()
-    end
-    
-    -- Stop any other potential music sources
+    if gameState.menuMusic then gameState.menuMusic:stop() end
+    if getEditorState().currentMusic then getEditorState().currentMusic:stop() end
+    if gameState.currentSong and gameState.currentSong.music then gameState.currentSong.music:stop() end
     for _, song in ipairs(songManager.getSongs()) do
-        if song.music then
-            song.music:stop()
-        end
+        if song.music then song.music:stop() end
     end
 end
 
-local function enterEditor()
-    silenceAllMusic()
+local function drawInstructions()
+    love.graphics.setColor(1, 1, 1, 0.7)
+    love.graphics.setFont(gameState.fonts.small)
+    local instructions = {
+        "How to create a beatmap:",
+        "1. Drag and drop an MP3 file here",
+        "2. Press SPACE to start recording (3s countdown)",
+        "3. Press arrow keys in time with the music",
+        "4. Press SPACE to finish recording",
+        "Press ESC to cancel anytime"
+    }
+    
+    local y = 50
+    for _, line in ipairs(instructions) do
+        love.graphics.printf(line, 50, y, love.graphics.getWidth() - 100, "left")
+        y = y + 25
+    end
 end
 
 local function drawEditor()
+    local editor = getEditorState()
+    
     -- Draw gameplay background
     love.graphics.setColor(0, 0, 0, 0.7)
     love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
 
-    if not gameState.editor.recording then
+    if not editor.recording then
         -- Show initial setup screen
         love.graphics.setColor(gameState.colors.ui)
         love.graphics.setFont(gameState.fonts.title)
         love.graphics.printf("Beat Map Editor", 0, 50, love.graphics.getWidth(), "center")
         
         love.graphics.setFont(gameState.fonts.medium)
-        love.graphics.printf("Song: " .. (gameState.editor.songName or "No song selected"), 0, 150, love.graphics.getWidth(), "center")
-        if not gameState.editor.songName then
-            love.graphics.printf("Drag and drop an MP3 file here", 0, 200, love.graphics.getWidth(), "center")
+        if editor.currentMusic then
+            love.graphics.printf("Current song: " .. editor.songName, 0, 150, love.graphics.getWidth(), "center")
+            love.graphics.printf("Audio loaded successfully!", 0, 200, love.graphics.getWidth(), "center")
+            love.graphics.printf("Press SPACE when ready to record", 0, 250, love.graphics.getWidth(), "center")
         else
-            if gameState.editor.currentMusic then
-                love.graphics.printf("Press Space to start recording", 0, 250, love.graphics.getWidth(), "center")
-            else
-                love.graphics.setColor(gameState.colors.miss)
-                love.graphics.printf("Error loading audio file", 0, 250, love.graphics.getWidth(), "center")
-            end
+            love.graphics.printf("Waiting for MP3 file...", 0, 200, love.graphics.getWidth(), "center")
         end
-        love.graphics.printf("Press Escape to return to menu", 0, 300, love.graphics.getWidth(), "center")
     else
-        -- Draw lane effects only for active/visible lanes
+        -- Draw lane effects for active keys
         local laneEffects = {
-            left = holdState.left.visible and 1 or 0,
-            down = holdState.down.visible and 1 or 0,
-            up = holdState.up.visible and 1 or 0,
-            right = holdState.right.visible and 1 or 0
+            left = activeKeys.left and 1 or 0,
+            down = activeKeys.down and 1 or 0,
+            up = activeKeys.up and 1 or 0,
+            right = activeKeys.right and 1 or 0
         }
         gameplay.drawLaneEffects(targetArrows, laneEffects)
 
-        -- Draw target arrows only when corresponding lane is visible
+        -- Draw target arrows only when key is pressed
         for _, arrow in ipairs(targetArrows) do
-            if holdState[arrow.direction].visible then
+            if activeKeys[arrow.direction] then
                 gameplay.drawArrow(
                     arrow.x, 
                     arrow.y, 
@@ -88,14 +105,14 @@ local function drawEditor()
                     arrowColors, 
                     1, 
                     1, 
-                    arrow.glow
+                    1  -- Full glow when pressed
                 )
             end
         end
 
         -- Draw placed arrows
-        for _, arrow in ipairs(gameState.editor.arrows) do
-            local y = arrow.y or (love.graphics.getHeight() - (gameState.editor.currentTime - arrow.time) * 400)
+        for _, arrow in ipairs(editor.arrows) do
+            local y = arrow.y or (love.graphics.getHeight() - (editor.currentTime - arrow.time) * 400)
             if y > 0 and y < love.graphics.getHeight() then
                 gameplay.drawArrow(
                     gameplay.getArrowXPosition(arrow.direction),
@@ -105,80 +122,62 @@ local function drawEditor()
                     arrowColors,
                     1,
                     1,
-                    0,
-                    arrow.holdLength and true or false,
-                    arrow.holdLength,
-                    arrow.holdLength and ((y - arrow.y) / (arrow.holdLength * 400)) or nil
+                    0
                 )
             end
         end
 
         -- Draw UI elements
-        gameUI.drawProgressBar(gameState.editor.currentTime, gameState.editor.currentMusic:getDuration(), gameState.colors)
+        gameUI.drawProgressBar(editor.currentTime, editor.currentMusic:getDuration(), gameState.colors)
         
         -- Draw recording status
-        love.graphics.setColor(1, 1, 1, 0.8)
+        love.graphics.setColor(1, 0, 0, 1)
         love.graphics.setFont(gameState.fonts.medium)
-        love.graphics.printf("RECORDING", 0, 20, love.graphics.getWidth(), "center")
+        love.graphics.printf("● RECORDING", 0, 20, love.graphics.getWidth(), "center")
         
-        -- Draw controls help
-        love.graphics.setFont(gameState.fonts.small)
-        love.graphics.setColor(1, 1, 1, 0.6)
-        love.graphics.printf("Hold arrows for hold notes • Space to finish • Escape to cancel", 
-            0, love.graphics.getHeight() - 30, love.graphics.getWidth(), "center")
-        
-        -- Draw active hold indicators only for visible lanes
-        for direction, state in pairs(holdState) do
-            if state.active and state.visible then
-                local x = gameplay.getArrowXPosition(direction)
-                local holdDuration = gameState.editor.currentTime - state.startTime
-                love.graphics.setColor(1, 1, 0, 0.8)
-                love.graphics.printf(string.format("%.1fs", holdDuration), 
-                    x - 50, love.graphics.getHeight() - 60, 100, "center")
-            end
-        end
+        -- Draw time
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.printf(string.format("Time: %.2f", editor.currentTime), 0, 60, love.graphics.getWidth(), "center")
+    end
+
+    -- Draw countdown if active
+    if countdown.active then
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.setFont(gameState.fonts.title)
+        love.graphics.printf(math.ceil(countdown.time), 0, love.graphics.getHeight()/2 - 50, love.graphics.getWidth(), "center")
+        love.graphics.setFont(gameState.fonts.medium)
+        love.graphics.printf("Get ready!", 0, love.graphics.getHeight()/2 + 50, love.graphics.getWidth(), "center")
+    end
+    
+    -- Draw status message if active
+    if status.message ~= "" and status.time > 0 then
+        love.graphics.setColor(1, 1, 0, math.min(1, status.time))
+        love.graphics.setFont(gameState.fonts.medium)
+        love.graphics.printf(status.message, 0, love.graphics.getHeight() - 100, love.graphics.getWidth(), "center")
     end
 end
 
 local function startRecording()
-    if not gameState.editor.currentMusic then
-        return
-    end
+    local editor = getEditorState()
+    if not editor.currentMusic then return end
     
-    silenceAllMusic() -- Ensure all other music is stopped
-    
-    gameState.editor.recording = true
-    gameState.editor.currentTime = 0
-    gameState.editor.arrows = {}
-    gameState.editor.currentMusic:play()
-    
-    -- Reset hold states
-    for direction, _ in pairs(holdState) do
-        holdState[direction] = { active = false, startTime = 0, visible = false }
-    end
+    silenceAllMusic()
+    countdown.active = true
+    countdown.time = 3
+    editor.recording = false
+    editor.currentTime = 0
+    editor.arrows = {}
+    setStatus("Recording will start in 3 seconds...", 3)
 end
 
 local function stopRecording()
-    gameState.editor.recording = false
-    if gameState.editor.currentMusic then
-        gameState.editor.currentMusic:stop()
-    end
+    local editor = getEditorState()
+    editor.recording = false
+    countdown.active = false
+    if editor.currentMusic then editor.currentMusic:stop() end
     
-    -- Finish any active holds
-    for direction, state in pairs(holdState) do
-        if state.active then
-            local holdLength = gameState.editor.currentTime - state.startTime
-            table.insert(gameState.editor.arrows, {
-                time = state.startTime,
-                direction = direction,
-                holdLength = holdLength
-            })
-            holdState[direction] = { active = false, startTime = 0, visible = false }
-        end
-    end
-    
-    if #gameState.editor.arrows == 0 then
-        -- Don't save if no arrows were placed
+    if #editor.arrows == 0 then
+        setStatus("No arrows recorded, returning to menu...", 2)
         gameState.editor = {
             recording = false,
             currentTime = 0,
@@ -193,27 +192,24 @@ local function stopRecording()
     end
     
     -- Sort arrows by time
-    table.sort(gameState.editor.arrows, function(a, b) return a.time < b.time end)
+    table.sort(editor.arrows, function(a, b) return a.time < b.time end)
     
-    -- Create pattern
+    -- Create and save pattern
     local pattern = {
-        name = gameState.editor.songName,
+        name = editor.songName,
         difficulty = "Custom",
-        bpm = 120, -- Default BPM
-        arrows = gameState.editor.arrows
+        bpm = 120,
+        arrows = editor.arrows
     }
     
-    -- Save the custom song using storage module
-    local success = storage.saveCustomSong(gameState.editor.songName, gameState.editor.audioData, pattern)
-    if not success then
-        print("Failed to save custom song")
-        return
+    if storage.saveCustomSong(editor.songName, editor.audioData, pattern) then
+        pattern.audio = love.filesystem.getSaveDirectory() .. "/assets/" .. editor.songName .. ".mp3"
+        pattern.music = editor.currentMusic
+        songManager.addSong(pattern)
+        setStatus("Beatmap saved successfully!", 2)
+    else
+        setStatus("Error saving beatmap!", 2)
     end
-    
-    -- Add to songs list
-    pattern.audio = love.filesystem.getSaveDirectory() .. "/assets/" .. gameState.editor.songName .. ".mp3"
-    pattern.music = gameState.editor.currentMusic
-    songManager.addSong(pattern)
     
     -- Reset editor state
     gameState.editor = {
@@ -226,87 +222,70 @@ local function stopRecording()
         audioData = nil
     }
     
-    -- Return to menu
     gameState.state.current = "mainMenu"
 end
 
 local function updateEditor(dt)
-    if gameState.editor.recording then
-        gameState.editor.currentTime = gameState.editor.currentTime + dt
-        
-        -- Update target arrow glows based on hold states
-        for _, arrow in ipairs(targetArrows) do
-            if holdState[arrow.direction].active then
-                arrow.glow = math.min(1, arrow.glow + dt * 4)
-            else
-                arrow.glow = math.max(0, arrow.glow - dt * 4)
-            end
+    local editor = getEditorState()
+    
+    -- Update status message
+    if status.time > 0 then
+        status.time = status.time - dt
+        if status.time <= 0 then
+            status.message = ""
         end
+    end
+
+    if countdown.active then
+        countdown.time = countdown.time - dt
+        if countdown.time <= 0 then
+            countdown.active = false
+            editor.recording = true
+            editor.currentMusic:play()
+            setStatus("Recording started!", 1)
+        end
+    elseif editor.recording then
+        editor.currentTime = editor.currentMusic:tell() -- Use actual music time instead of dt
     end
 end
 
 local function handleEditorKeyPress(key)
+    local editor = getEditorState()
+    
     if key == "left" or key == "down" or key == "up" or key == "right" then
-        -- Always make lane visible when key is pressed
-        holdState[key].visible = true
-        
-        -- Handle recording-specific logic
-        if gameState.editor.recording and not holdState[key].active then
-            holdState[key].active = true
-            holdState[key].startTime = gameState.editor.currentTime
+        -- Record time immediately on key press
+        if editor.recording then
+            local currentTime = editor.currentMusic:tell() -- Get exact music time
+            table.insert(editor.arrows, {
+                time = currentTime,
+                direction = key
+            })
         end
-    elseif not gameState.editor.recording then
-        if key == "space" and gameState.editor.songName and gameState.editor.currentMusic then
+        -- Update visual state after recording
+        activeKeys[key] = true
+    elseif not editor.recording and not countdown.active then
+        if key == "space" and editor.currentMusic then
             startRecording()
         elseif key == "escape" then
             gameState.state.current = "mainMenu"
-            if gameState.editor.currentMusic then
-                gameState.editor.currentMusic:stop()
-            end
+            if editor.currentMusic then editor.currentMusic:stop() end
         end
-    else
+    elseif editor.recording then
         if key == "space" then
             stopRecording()
         elseif key == "escape" then
-            -- Cancel recording
-            gameState.editor.recording = false
-            if gameState.editor.currentMusic then
-                gameState.editor.currentMusic:stop()
-            end
-            gameState.editor.arrows = {}
-            -- Reset hold states
-            for direction, _ in pairs(holdState) do
-                holdState[direction] = { active = false, startTime = 0, visible = false }
-            end
+            editor.recording = false
+            countdown.active = false
+            if editor.currentMusic then editor.currentMusic:stop() end
+            editor.arrows = {}
+            setStatus("Recording cancelled", 2)
         end
     end
 end
 
 local function handleEditorKeyRelease(key)
     if key == "left" or key == "down" or key == "up" or key == "right" then
-        -- Always hide the lane and arrow when key is released
-        holdState[key].visible = false
-        
-        -- Handle recording-specific logic
-        if gameState.editor.recording and holdState[key].active then
-            local holdLength = gameState.editor.currentTime - holdState[key].startTime
-            if holdLength >= 0.1 then -- Minimum hold duration of 0.1 seconds
-                -- Add hold note
-                table.insert(gameState.editor.arrows, {
-                    time = holdState[key].startTime,
-                    direction = key,
-                    holdLength = holdLength
-                })
-            else
-                -- Add regular tap note
-                table.insert(gameState.editor.arrows, {
-                    time = holdState[key].startTime,
-                    direction = key
-                })
-            end
-            holdState[key].active = false
-            holdState[key].startTime = 0
-        end
+        activeKeys[key] = false
     end
 end
 
@@ -315,5 +294,8 @@ return {
     updateEditor = updateEditor,
     handleEditorKeyPress = handleEditorKeyPress,
     handleEditorKeyRelease = handleEditorKeyRelease,
-    enterEditor = enterEditor
+    enterEditor = function() 
+        silenceAllMusic() 
+        setStatus("Welcome to the Beat Map Editor!", 3)
+    end
 }
