@@ -1,24 +1,4 @@
--- Utility function to serialize tables
-local function serialize(tbl)
-    local result = "{"
-    for k, v in pairs(tbl) do
-        if type(k) == "string" then
-            result = result .. k .. " = "
-        else
-            result = result .. "[" .. k .. "] = "
-        end
-        
-        if type(v) == "table" then
-            result = result .. serialize(v)
-        elseif type(v) == "string" then
-            result = result .. string.format("%q", v)
-        else
-            result = result .. tostring(v)
-        end
-        result = result .. ","
-    end
-    return result .. "}"
-end
+local storage = require('storage')
 
 local function drawEditor()
     -- Draw background panel
@@ -99,30 +79,23 @@ local function stopRecording()
     -- Sort arrows by time
     table.sort(editorState.arrows, function(a, b) return a.time < b.time end)
     
-    -- Create pattern file content
+    -- Create pattern
     local pattern = {
         name = editorState.songName,
-        audio = editorState.audioPath,
         difficulty = "Custom",
         bpm = 120, -- Default BPM
         arrows = editorState.arrows
     }
     
-    -- Create directory for the new song
-    local timestamp = os.time()
-    local songDir = "songs/custom_" .. timestamp
-    love.filesystem.createDirectory(songDir)
-    
-    -- Save pattern to file using local serialize function
-    local content = "return " .. serialize(pattern)
-    local success = love.filesystem.write(songDir .. "/pattern.lua", content)
+    -- Save the custom song using storage module
+    local success = storage.saveCustomSong(editorState.songName, editorState.audioData, pattern)
     if not success then
-        print("Failed to save pattern file")
+        print("Failed to save custom song")
         return
     end
     
-    -- Add to songs list with full path for audio
-    pattern.audio = love.filesystem.getSaveDirectory() .. "/" .. pattern.audio
+    -- Add to songs list
+    pattern.audio = love.filesystem.getSaveDirectory() .. "/assets/" .. editorState.songName .. ".mp3"
     pattern.music = editorState.currentMusic
     table.insert(songs, pattern)
     
@@ -133,7 +106,8 @@ local function stopRecording()
         arrows = {},
         songName = nil,
         audioPath = nil,
-        currentMusic = nil
+        currentMusic = nil,
+        audioData = nil
     }
     
     -- Return to menu
