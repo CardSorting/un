@@ -20,21 +20,21 @@ local function updatePreview(selectedSong, songs)
         -- Stop current preview if exists
         if previewSystem.currentPreview then
             previewSystem.currentPreview:stop()
+            previewSystem.currentPreview = nil
         end
         
         -- Load and play new preview
-        if selectedSong and songs[selectedSong] then
-            local song = songs[selectedSong]
-            -- Lower menu music volume
-            menuMusic:setVolume(0.3)
+        if selectedSong and songs[selectedSong] and songs[selectedSong].music then
+            -- Silence menu music completely
+            menuMusic:setVolume(0)
             
-            -- Create new preview
-            previewSystem.currentPreview = love.audio.newSource(song.path, "stream")
-            previewSystem.currentPreview:setVolume(0.7)
+            -- Use the already loaded music source
+            previewSystem.currentPreview = songs[selectedSong].music
+            previewSystem.currentPreview:setVolume(1.0) -- Full volume for preview
             previewSystem.currentPreview:play()
             previewSystem.previewStartTime = love.timer.getTime()
         else
-            -- Restore menu music volume if no preview
+            -- Restore menu music to full volume if no preview
             menuMusic:setVolume(1)
         end
         
