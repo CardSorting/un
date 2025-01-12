@@ -178,9 +178,16 @@ function love.keypressed(key)
         elseif key == "down" then
             gameState.state.selectedMenuItem = math.min(#gameState.menuItems, gameState.state.selectedMenuItem + 1)
         elseif key == "return" then
-            gameState.menuItems[gameState.state.selectedMenuItem].action()
-            gameState.state.stagesCleared = 0
-            gameState.state.totalScore = 0
+            local selectedItem = gameState.menuItems[gameState.state.selectedMenuItem]
+            if selectedItem.text == "Create Beat Map" then
+                menu.cleanup() -- Clean up menu state before entering editor
+                gameState.state.current = "editor"
+                editor.enterEditor()
+            else
+                selectedItem.action()
+                gameState.state.stagesCleared = 0
+                gameState.state.totalScore = 0
+            end
         end
     elseif gameState.state.current == "songSelect" then
         local songs = songManager.getSongs()
@@ -207,6 +214,7 @@ function love.keypressed(key)
                 gameState.state.selectedSong = gameState.state.selectedSong + 1
             end
         elseif key == "return" then
+            menu.cleanup() -- Clean up menu state before starting game
             gameState.state.current = "game"
             gameState.state.score = 0
             gameState.state.combo = 0

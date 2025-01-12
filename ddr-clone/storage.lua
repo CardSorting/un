@@ -78,8 +78,8 @@ function storage.saveCustomSong(songName, audioData, pattern)
     -- Update pattern with audio path
     pattern.audio = audioPath
     
-    -- Serialize and save pattern
-    local serialize = function(tbl)
+    -- Create serialize function with proper recursion
+    local function serializeTable(tbl)
         local result = "{"
         for k, v in pairs(tbl) do
             if type(k) == "string" then
@@ -89,7 +89,7 @@ function storage.saveCustomSong(songName, audioData, pattern)
             end
             
             if type(v) == "table" then
-                result = result .. serialize(v)
+                result = result .. serializeTable(v)
             elseif type(v) == "string" then
                 result = result .. string.format("%q", v)
             else
@@ -100,7 +100,7 @@ function storage.saveCustomSong(songName, audioData, pattern)
         return result .. "}"
     end
     
-    local content = "return " .. serialize(pattern)
+    local content = "return " .. serializeTable(pattern)
     success = love.filesystem.write(songDir .. "/pattern.lua", content)
     if not success then
         print("Failed to save pattern file")
