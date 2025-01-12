@@ -1,3 +1,13 @@
+-- Initialize fonts immediately when the module loads
+local fonts = {
+    title = love.graphics.newFont(48),
+    large = love.graphics.newFont(32),
+    medium = love.graphics.newFont(24),
+    small = love.graphics.newFont(20),
+    combo = love.graphics.newFont(36),
+    multiplier = love.graphics.newFont(28)
+}
+
 local gameState = {
     current = "mainMenu",  -- mainMenu, songSelect, game, gameover, editor
     score = 0,
@@ -68,23 +78,20 @@ local hitSettings = {
 }
 
 local function init()
-    -- Load fonts
-    fonts = {
-        title = love.graphics.newFont(48),
-        large = love.graphics.newFont(32),
-        medium = love.graphics.newFont(24),
-        small = love.graphics.newFont(20),
-        combo = love.graphics.newFont(36),
-        multiplier = love.graphics.newFont(28)
-    }
+    -- Any additional initialization if needed
+    -- Fonts are already initialized at module load
 end
 
-return {
+-- Create a module table with all components
+local module = {
     state = gameState,
     editor = editorState,
     menuItems = menuItems,
     colors = colors,
     hitSettings = hitSettings,
-    init = init,
-    fonts = fonts
+    fonts = fonts,
+    init = init
 }
+
+-- Return the module
+return module

@@ -9,12 +9,14 @@ local gameState = require('game_state')
 local songManager = require('song_manager')
 
 function love.load()
-    -- Initialize storage and modules
+    -- Initialize storage and game state first
     storage.init()
-    gameState.init()
+    gameState.init()  -- This will initialize fonts and other resources
+    
+    -- Then initialize song manager which depends on storage
     songManager.init()
     
-    -- Initialize gameplay elements
+    -- Initialize gameplay elements last
     arrowColors = gameplay.createArrowColors()
     targetArrows = gameplay.createTargetArrows()
     movingArrows = {}
