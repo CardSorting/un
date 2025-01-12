@@ -3,7 +3,6 @@ local ui = require('ui_config')
 local gameUI = require('game_ui')
 local gameplay = require('gameplay')
 local gameOver = require('game_over')
-local editor = require('editor')
 local storage = require('storage')
 local gameState = require('game_state')
 local songManager = require('song_manager')
@@ -113,8 +112,6 @@ function love.update(dt)
         end
     elseif gameState.state.current == "gameover" then
         gameOver.update(dt)
-    elseif gameState.state.current == "editor" then
-        editor.updateEditor(dt)
     end
 end
 
@@ -123,6 +120,40 @@ function love.draw()
     
     if gameState.state.current == "mainMenu" then
         menu.drawMainMenu()
+    elseif gameState.state.current == "options" then
+        -- Draw options menu
+        love.graphics.setFont(gameState.fonts.title)
+        love.graphics.setColor(gameState.colors.ui)
+        love.graphics.printf("Options", 0, 50, love.graphics.getWidth(), "center")
+        
+        -- Draw key mapping options
+        love.graphics.setFont(gameState.fonts.medium)
+        local startY = 200
+        local spacing = 50
+        local directions = {"left", "down", "up", "right"}
+        
+        for i, direction in ipairs(directions) do
+            local y = startY + (i-1) * spacing
+            local text = direction:upper() .. ": " .. gameState.state.keyMappings[direction]:upper()
+            
+            -- Highlight selected option
+            if gameState.state.options.selectedOption == i then
+                love.graphics.setColor(gameState.colors.combo)
+                -- Show "Press any key" when awaiting input
+                if gameState.state.options.awaitingInput and gameState.state.options.remappingKey == direction then
+                    text = direction:upper() .. ": Press any key..."
+                end
+            else
+                love.graphics.setColor(gameState.colors.ui)
+            end
+            
+            love.graphics.printf(text, 0, y, love.graphics.getWidth(), "center")
+        end
+        
+        -- Draw instructions
+        love.graphics.setFont(gameState.fonts.small)
+        love.graphics.setColor(gameState.colors.uiDark)
+        love.graphics.printf("Press ENTER to remap key • ESC to return", 0, love.graphics.getHeight() - 100, love.graphics.getWidth(), "center")
     elseif gameState.state.current == "songSelect" then
         menu.drawSongSelect()
     elseif gameState.state.current == "game" then
@@ -167,8 +198,6 @@ function love.draw()
         
         -- Draw the animated game over screen
         gameOver.draw(gameState.state, gameState.colors, gameState.fonts)
-    elseif gameState.state.current == "editor" then
-        editor.drawEditor()
     end
 end
 
@@ -180,16 +209,10 @@ function love.keypressed(key)
             gameState.state.selectedMenuItem = math.min(#gameState.menuItems, gameState.state.selectedMenuItem + 1)
         elseif key == "return" then
             local selectedItem = gameState.menuItems[gameState.state.selectedMenuItem]
-            if selectedItem.text == "Create Beat Map" then
-                menu.cleanup() -- Clean up menu state before entering editor
-                gameState.state.current = "editor"
-                editor.enterEditor()
-            else
-                selectedItem.action()
-                gameState.state.stagesCleared = 0
-                gameState.state.totalScore = 0
-                songManager.cleanup() -- Clean up invalid songs when entering menu
-            end
+            selectedItem.action()
+            gameState.state.stagesCleared = 0
+            gameState.state.totalScore = 0
+            songManager.cleanup() -- Clean up invalid songs when entering menu
         end
     elseif gameState.state.current == "songSelect" then
         local songs = songManager.getSongs()
@@ -243,13 +266,21 @@ function love.keypressed(key)
             songManager.cleanup() -- Clean up invalid songs when returning to menu
         end
     elseif gameState.state.current == "game" then
-        if key == "left" or key == "down" or key == "up" or key == "right" then
+        local mappedKey = nil
+        for direction, mapped in pairs(gameState.state.keyMappings) do
+            if key == mapped then
+                mappedKey = direction
+                break
+            end
+        end
+        
+        if mappedKey then
             local hit = false
-            gameState.state.laneEffects[key] = 0.1
+            gameState.state.laneEffects[mappedKey] = 0.1
             
             for i = #movingArrows, 1, -1 do
                 local arrow = movingArrows[i]
-                if arrow.direction == key and gameplay.isArrowInLane(arrow, key) then
+                if arrow.direction == mappedKey and gameplay.isArrowInLane(arrow, mappedKey) then
                     local hitResult = gameplay.checkHit(arrow, ui.gameArea.targetY, gameState.hitSettings.threshold, gameState.hitSettings.perfect)
                     if hitResult then
                         hit = true
@@ -288,6 +319,30 @@ function love.keypressed(key)
             gameState.state.current = "songSelect"
             songManager.stopCurrentSong(gameState.state.currentMusic)
         end
+    elseif gameState.state.current == "options" then
+        if gameState.state.options.awaitingInput then
+            if key ~= "escape" then
+                -- Update key mapping
+                gameState.state.keyMappings[gameState.state.options.remappingKey] = key
+                -- Save mappings
+                storage.save("keyMappings", gameState.state.keyMappings)
+            end
+            -- Reset remapping state
+            gameState.state.options.awaitingInput = false
+            gameState.state.options.remappingKey = nil
+        else
+            if key == "up" then
+                gameState.state.options.selectedOption = math.max(1, gameState.state.options.selectedOption - 1)
+            elseif key == "down" then
+                gameState.state.options.selectedOption = math.min(4, gameState.state.options.selectedOption + 1)
+            elseif key == "return" then
+                local directions = {"left", "down", "up", "right"}
+                gameState.state.options.remappingKey = directions[gameState.state.options.selectedOption]
+                gameState.state.options.awaitingInput = true
+            elseif key == "escape" then
+                gameState.state.current = "mainMenu"
+            end
+        end
     elseif gameState.state.current == "gameover" and key == "r" then
         if gameState.state.isGameOver then
             gameState.state.current = "mainMenu"
@@ -296,29 +351,5 @@ function love.keypressed(key)
             gameState.state.current = "songSelect"
         end
         gameOver.reset()
-    elseif gameState.state.current == "editor" then
-        editor.handleEditorKeyPress(key)
-    end
-end
-
-function love.filedropped(file)
-    if gameState.state.current == "editor" then
-        local filename = file:getFilename()
-        if filename:match("%.mp3$") then
-            -- Get the file data
-            file:open("r")
-            local data = file:read("data")  -- Use "data" mode for binary files
-            file:close()
-            
-            -- Update editor state
-            local basename = filename:match("[^/\\]+$")
-            gameState.editor.songName = basename:match("(.+)%.mp3$")
-            gameState.editor.audioData = data
-            
-            -- Try to load the audio file
-            gameState.editor.currentMusic = songManager.loadAudioFromData(data)
-        else
-            print("Invalid file type. Please use MP3 format.")
-        end
     end
 end

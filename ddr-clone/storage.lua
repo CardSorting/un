@@ -1,10 +1,80 @@
-local storage = {}
+local storage = {
+    -- Define file paths for different types of data
+    paths = {
+        keyMappings = "config/key_mappings.lua"
+    }
+}
 
 -- Create required directories if they don't exist
 function storage.init()
     love.filesystem.createDirectory("assets")
     love.filesystem.createDirectory("songs")
+    love.filesystem.createDirectory("config")
     print("Save directory: " .. love.filesystem.getSaveDirectory())
+end
+
+-- Generic save function for any data
+function storage.save(key, data)
+    if key == "keyMappings" then
+        -- Create serialize function
+        local function serializeTable(tbl)
+            local result = "return {"
+            for k, v in pairs(tbl) do
+                if type(k) == "string" then
+                    result = result .. string.format("%q", k) .. "="
+                else
+                    result = result .. "[" .. k .. "]="
+                end
+                
+                if type(v) == "string" then
+                    result = result .. string.format("%q", v)
+                else
+                    result = result .. tostring(v)
+                end
+                result = result .. ","
+            end
+            return result .. "}"
+        end
+        
+        -- Save key mappings
+        local success = love.filesystem.write(storage.paths.keyMappings, serializeTable(data))
+        if not success then
+            print("Failed to save key mappings")
+            return false
+        end
+        return true
+    end
+    return false
+end
+
+-- Generic load function for any data
+function storage.load(key)
+    if key == "keyMappings" then
+        if love.filesystem.getInfo(storage.paths.keyMappings) then
+            -- Load the mappings file content
+            local content = love.filesystem.read(storage.paths.keyMappings)
+            if content then
+                -- Create a temporary file to load the mappings
+                local tempPath = "config/temp_mappings.lua"
+                love.filesystem.write(tempPath, content)
+                
+                -- Try to load the mappings
+                local success, mappings = pcall(require, tempPath:sub(1, -5))
+                
+                -- Clean up temporary file
+                love.filesystem.remove(tempPath)
+                
+                if success then
+                    return mappings
+                else
+                    print("Failed to load key mappings")
+                    print("Error: " .. tostring(mappings))
+                end
+            end
+        end
+        return nil
+    end
+    return nil
 end
 
 -- Load all custom songs from save directory

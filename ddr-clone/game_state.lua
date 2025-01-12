@@ -10,18 +10,8 @@ local fonts = {
     header = love.graphics.newFont(52)  -- New font for section headers
 }
 
-local editorState = {
-    recording = false,
-    currentTime = 0,
-    arrows = {},
-    songName = nil,
-    audioPath = nil,
-    currentMusic = nil,
-    audioData = nil
-}
-
 local gameState = {
-    current = "mainMenu",  -- mainMenu, songSelect, game, gameover, editor
+    current = "mainMenu",  -- mainMenu, songSelect, game, gameover, options
     score = 0,
     combo = 0,
     maxCombo = 0,
@@ -44,8 +34,6 @@ local gameState = {
     totalScore = 0,
     isGameOver = false,
     currentMusic = nil,
-    editor = editorState,  -- Initialize editor state properly
-    
     -- Enhanced animation states
     menuAnimations = {
         titleGlow = 0,
@@ -77,13 +65,27 @@ local gameState = {
         up = 0,
         right = 0
     },
-    hitEffects = {}
+    hitEffects = {},
+    
+    -- Key mapping configuration
+    keyMappings = {
+        left = "left",
+        down = "down",
+        up = "up",
+        right = "right"
+    },
+    
+    -- Options menu state
+    options = {
+        selectedOption = 1,
+        remappingKey = nil, -- Which direction is being remapped
+        awaitingInput = false -- Whether we're waiting for a key press
+    }
 }
 
 local menuItems = {
     {text = "Play", action = function() gameState.current = "songSelect" end},
-    {text = "Create Beat Map", action = function() gameState.current = "editor" end},
-    {text = "Options", action = function() end},
+    {text = "Options", action = function() gameState.current = "options" end},
     {text = "Exit", action = function() love.event.quit() end}
 }
 
@@ -124,22 +126,17 @@ local hitSettings = {
 }
 
 local function init()
-    -- Reset editor state
-    gameState.editor = {
-        recording = false,
-        currentTime = 0,
-        arrows = {},
-        songName = nil,
-        audioPath = nil,
-        currentMusic = nil,
-        audioData = nil
-    }
+    -- Load key mappings from storage if available
+    local storage = require('storage')
+    local savedMappings = storage.load("keyMappings")
+    if savedMappings then
+        gameState.keyMappings = savedMappings
+    end
 end
 
 -- Create a module table with all components
 local module = {
     state = gameState,
-    editor = gameState.editor,  -- Use the editor state from gameState
     menuItems = menuItems,
     colors = colors,
     hitSettings = hitSettings,
