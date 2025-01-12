@@ -1,5 +1,6 @@
 return {
-    name = "Rhythm Rush",
+    name = "Entropy Arcade",
+    audio = "assets/Entropy Arcade.mp3",
     difficulty = "Medium",
     bpm = 140,
     arrows = {

@@ -1,5 +1,6 @@
 return {
-    name = "Dance Master",
+    name = "Pixel Dreams",
+    audio = "assets/Pixel Dreams.mp3",
     difficulty = "Hard",
     bpm = 160,
     arrows = {

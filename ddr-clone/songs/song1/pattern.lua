@@ -1,5 +1,6 @@
 return {
-    name = "Beginner's Beat",
+    name = "Electric Gradient",
+    audio = "assets/Electric Gradient.mp3",
     difficulty = "Easy",
     bpm = 120,
     arrows = {

@@ -27,6 +27,7 @@ function love.load()
         stagesCleared = 0,
         totalScore = 0,
         isGameOver = false,  -- true for game over, false for stage clear
+        currentMusic = nil,  -- Store current music source
         laneEffects = {
             left = 0,
             down = 0,
@@ -49,6 +50,11 @@ function love.load()
         require("songs/song2/pattern"),
         require("songs/song3/pattern")
     }
+    
+    -- Load song audio files
+    for _, song in ipairs(songs) do
+        song.music = love.audio.newSource(song.audio, "stream")
+    end
     
     -- Colors
     colors = {
@@ -166,12 +172,18 @@ function love.update(dt)
             gameState.totalScore = gameState.totalScore + gameState.score
             gameState.isGameOver = gameState.stagesCleared >= 3
             gameState.current = "gameover"
+            if gameState.currentMusic then
+                gameState.currentMusic:stop()
+            end
             gameOver.reset()
         end
         
         if gameState.health <= 0 then
             gameState.isGameOver = true
             gameState.current = "gameover"
+            if gameState.currentMusic then
+                gameState.currentMusic:stop()
+            end
             gameOver.reset()
         end
     elseif gameState.current == "gameover" then
@@ -269,6 +281,12 @@ function love.keypressed(key)
             movingArrows = {}
             -- Reset target arrows when starting new game
             targetArrows = gameplay.createTargetArrows()
+            -- Start playing the selected song
+            if gameState.currentMusic then
+                gameState.currentMusic:stop()
+            end
+            gameState.currentMusic = songs[gameState.selectedSong].music
+            gameState.currentMusic:play()
         elseif key == "escape" then
             gameState.current = "mainMenu"
         end
@@ -317,6 +335,9 @@ function love.keypressed(key)
             end
         elseif key == "escape" then
             gameState.current = "songSelect"
+            if gameState.currentMusic then
+                gameState.currentMusic:stop()
+            end
         end
         
     elseif gameState.current == "gameover" and key == "r" then
